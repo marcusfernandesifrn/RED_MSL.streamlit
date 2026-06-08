@@ -19,7 +19,7 @@ import plotly.graph_objects as go
 # ── Configuração da Página ────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Sinais e Sistemas Lineares",
-    page_icon="📘",
+    page_icon="📡",
     layout="wide",
 )
 
@@ -86,42 +86,77 @@ def circulo(ax, x, y, r=0.25):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# CABEÇALHO
+# CABEÇALHO COMPACTO
 # ═══════════════════════════════════════════════════════════════════════════════
-st.title("📘 Sinais e Sistemas Lineares")
-
-st.markdown("""
-| | |
-|:---|:---|
-| **Disciplina** | Modelagem e Sistemas Lineares |
-| **Curso** | Engenharia de Energia |
-| **Instituição** | Instituto Federal de Educação, Ciência e Tecnologia do RN (IFRN) |
-| **Campus** | Campus Natal-Central (CNAT) |
-| **Autor** | Marcus V A Fernandes |
-| **Contato** | marcus.fernandes@ifrn.edu.br |
-| **Versão** | 1.0 |
-""")
-
-st.divider()
+st.title("📡 Sinais e Sistemas Lineares")
+st.caption("Modelagem e Sistemas Lineares · Engenharia de Energia · IFRN-CNAT · Marcus V A Fernandes")
+st.markdown("---")
 
 # ── Índice ────────────────────────────────────────────────────────────────────
-with st.expander("📋 Índice", expanded=False):
+with st.expander("📋 Índice — clique para expandir", expanded=False):
     st.markdown("""
-| # | Seção |
-|---|-------|
-| 1 | Definições Fundamentais |
-| 2 | Tamanho de um Sinal |
-| 3 | Natureza, Periodicidade e Causalidade |
-| 4 | Operações sobre Sinais |
-| 5 | Funções Pares e Ímpares |
-| 6 | Funções Singulares |
-| 7 | Funções Exponenciais |
-| 8 | Sistemas — Definições e Classificação |
-| 9 | Princípio da Superposição |
-| 10 | Estabilidade |
-| 11 | Sistemas de Controle |
-| 12 | Diagramas de Blocos e Álgebra |
-| 14 | Referências |
+**[1. Definições Fundamentais](#1-defini-es-fundamentais)**
+- Conceito de sinal e sistema
+- Sistemas SISO e MIMO
+- Diagrama de sistema genérico
+
+**[2. Tamanho de um Sinal](#2-tamanho-de-um-sinal)**
+- 2.1 Energia do sinal
+- 2.2 Potência média do sinal
+- Comparativo: sinal de energia vs. sinal de potência
+
+**[3. Natureza e Periodicidade](#3-natureza-e-periodicidade)**
+- 3.1 Natureza do sinal (analógico/digital, contínuo/discreto)
+- 3.2 Periodicidade e período fundamental
+- 3.3 Causalidade (causal, não-causal, anti-causal) e determinismo
+
+**[4. Operações sobre Sinais](#4-opera-es-sobre-sinais)**
+- 4.1 Deslocamento temporal (atraso e avanço)
+- 4.2 Escalamento temporal (compressão e expansão)
+- 4.3 Reversão temporal
+- 🎛️ Explorador interativo de operações
+
+**[5. Funções Pares e Ímpares](#5-fun-es-pares-e-mpares)**
+- Decomposição par/ímpar de um sinal arbitrário
+- Propriedades do produto
+
+**[6. Funções Singulares](#6-fun-es-singulares)**
+- 6.1 Degrau unitário $u(t)$
+- 6.2 Impulso de Dirac $\\delta(t)$ — propriedade de amostragem
+- 6.3 Rampa $r(t)$ e parábola $p(t)$
+
+**[7. Funções Exponenciais e Frequência Complexa](#7-fun-es-exponenciais-e-frequ-ncia-complexa)**
+- Variável de frequência complexa $s = \\sigma + j\\omega$
+- Casos de $e^{st}$: constante, monotônica, senoidal, amortecida
+- Senoide amortecida e envelope exponencial
+
+**[8. Sistemas — Definições e Classificação](#8-sistemas-defini-es-e-classifica-o)**
+- Classificação: linear, LIT, causal, estável (BIBO), SISO/MIMO
+- 8.1 Decomposição da resposta (entrada nula + estado nulo)
+- 8.2 Sistemas LIT e Transformada de Laplace
+
+**[9. Princípio da Superposição](#9-princ-pio-da-superposi-o)**
+- Aditividade e homogeneidade
+- Verificação numérica
+
+**[10. Estabilidade](#10-estabilidade)**
+- Estável, instável e marginalmente estável
+- Localização dos pólos no plano complexo
+
+**[11. Sistemas de Controle](#11-sistemas-de-controle)**
+- 11.1 Malha aberta
+- 11.2 Malha fechada (realimentação negativa)
+- 11.3 Objetivos: resposta transitória, estacionária e estabilidade
+- 11.4 Sinais de entrada padrão (impulso, degrau, rampa, parábola, senoidal)
+
+**[12. Diagramas de Blocos](#12-diagramas-de-blocos)**
+- 12.1 Cascata (série): $G_{eq} = G_1 \\cdot G_2$
+- 12.2 Paralelo: $G_{eq} = G_1 \\pm G_2$
+- 12.3 Realimentação: $T(s) = G / (1 \\pm GF)$
+- 12.4 Álgebra de blocos — regras de movimento de pontos de soma e ramificação
+- Exemplo numérico: redução de malha fechada
+
+**[13. Referências](#13-refer-ncias)**
 """)
 
 st.divider()
@@ -1374,11 +1409,10 @@ st.divider()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SEÇÃO 14 — REFERÊNCIAS
+# SEÇÃO 13 — REFERÊNCIAS
 # ═══════════════════════════════════════════════════════════════════════════════
-st.header("14. Referências")
-
-st.markdown("""
+with st.expander("13. Referências", expanded=False):
+    st.markdown("""
 - **LATHI, B. P.; GREEN, R.** *Sinais e Sistemas Lineares*. 3ª ed. Oxford University Press, 2018.
 - **NISE, N. S.** *Engenharia de Sistemas de Controle*. 7ª ed. Wiley / LTC, 2017.
 - **DORF, R. C.; BISHOP, R. H.** *Sistemas de Controle Modernos*. 13ª ed. LTC, 2018.
