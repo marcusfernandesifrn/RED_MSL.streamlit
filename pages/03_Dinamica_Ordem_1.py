@@ -70,11 +70,9 @@ def seta(ax, x1, y1, x2, y2, lb="", ldy=0.09):
 
 # ── Funções de resposta ───────────────────────────────────────────────────────
 def step_response(k_v, a_v, t_arr):
-    """Resposta ao degrau de H(s)=k/(s+a): y(t)=(k/a)*(1-exp(-a*t))"""
     return (k_v / a_v) * (1.0 - np.exp(-a_v * t_arr))
 
 def step_response_zero(k_v, a_v, b_v, t_arr):
-    """Resposta ao degrau de H(s)=k*(s+b)/(s+a)"""
     sys_h = lti([k_v, k_v * b_v], [1, a_v])
     _, y = sc_step(sys_h, T=t_arr)
     return y
@@ -118,6 +116,38 @@ def show_fig(fig, width_frac=0.65):
         unsafe_allow_html=True,
     )
 
+# ── Helper: plano s padronizado ───────────────────────────────────────────────
+def make_plane_trace(polos_x, polos_y, zeros_x=None, zeros_y=None,
+                     xrange=(-5, 1.5), yrange=(-1.5, 1.5),
+                     polo_cor="#d62728", zero_cor="#2ca02c"):
+    """Retorna figura Plotly do plano s com regiões SPE/SPD."""
+    fig = go.Figure()
+    fig.add_vrect(x0=xrange[0], x1=0, fillcolor="seagreen",
+                  opacity=0.06, layer="below", line_width=0)
+    fig.add_vrect(x0=0, x1=xrange[1], fillcolor="crimson",
+                  opacity=0.06, layer="below", line_width=0)
+    if zeros_x is not None:
+        fig.add_trace(go.Scatter(
+            x=zeros_x, y=zeros_y, mode="markers",
+            marker=dict(symbol="circle-open", size=14,
+                        color=zero_cor, line=dict(width=2.5)),
+            name="Zero"))
+    fig.add_trace(go.Scatter(
+        x=polos_x, y=polos_y, mode="markers",
+        marker=dict(symbol="x", size=14,
+                    color=polo_cor, line=dict(width=3)),
+        name="Polo"))
+    fig.update_layout(
+        xaxis=dict(title="σ", range=list(xrange), zeroline=True,
+                   zerolinecolor="black", zerolinewidth=1),
+        yaxis=dict(title="jω", range=list(yrange), zeroline=True,
+                   zerolinecolor="black", zerolinewidth=1),
+        height=300, margin=dict(t=10, b=10, l=50, r=10),
+        template="plotly_white", showlegend=True,
+        legend=dict(orientation="h", y=1.08),
+    )
+    return fig
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CABEÇALHO
@@ -141,20 +171,20 @@ with st.expander("📋 Índice — clique para expandir", expanded=False):
 - 🎛️ Explorador interativo: sliders $k$, $a$, $k_r$
 
 **[3. Sistemas de Grau Relativo 1 — Exemplos e Efeito dos Parâmetros](#3-sistemas-de-grau-relativo-1-exemplos-e-efeito-dos-par-metros)**
-- 3.1 Exemplos físicos: circuito RL, RC, massa-amortecedor, inércia-amortecedor, térmico, hidráulico
-- 3.2 Efeito de $k$ (ganho estático) e de $a$ (velocidade) na resposta
+- 3.1 Exemplos físicos: RL, RC, massa-amortecedor, inércia-amortecedor, térmico, hidráulico
+- 3.2 Efeito de $k$ (ganho estático) e de $a$ (velocidade de resposta)
 - 3.3 🎛️ Explorador interativo: plano $s$ + resposta ao degrau
 
 **[4. Sistemas de Grau Relativo 0 — Efeito do Zero](#4-sistemas-de-grau-relativo-0-efeito-do-zero)**
 - 4.1 Função de transferência com zero finito: $H'(s) = k(s+b)/(s+a)$
-- 4.2 Resposta ao degrau e valores notáveis $y'(0^+) = k$, $y'(\infty) = kb/a$
-- 4.3 Classificação: fase mínima ($b>0$), cancelamento polo-zero ($b=a$), fase não-mínima ($b<0$)
+- 4.2 Valores notáveis $y'(0^+) = k$, $y'(\infty) = kb/a$
+- 4.3 Fase mínima ($b>0$), cancelamento polo-zero ($b=a$), fase não-mínima ($b<0$)
 - 🎛️ Explorador interativo: sliders $k$, $a$, $b$
 
 **[5. Polo no Semiplano Direito — Sistema Instável](#5-polo-no-semiplano-direito-sistema-inst-vel)**
 - 5.1 Resposta ao degrau: $y(t) = (k/a)(e^{+at}-1)$
 - 5.2 Efeito de zero adicional sobre a velocidade de divergência
-- 🎛️ Explorador interativo: slider $a$ (velocidade de divergência)
+- 🎛️ Explorador interativo: slider $a$
 
 **[6. Polo na Origem — Sistema Marginalmente Estável](#6-polo-na-origem-sistema-marginalmente-est-vel)**
 - 6.1 Integrador puro (malha aberta): saída rampa $y(t) = kt$
@@ -200,7 +230,6 @@ O polo ocupa a posição $s = -a$ no plano complexo.
 """)
 
 fig1, axes1 = plt.subplots(1, 2, figsize=(8.0, 2.4))
-
 ax = axes1[0]
 ax.set_xlim(0, 5); ax.set_ylim(-0.6, 0.6); ax.axis("off")
 seta(ax, 0.2, 0, 1.2, 0, "X(s)")
@@ -211,8 +240,8 @@ ax.set_title("Diagrama de blocos — sistema de 1ª ordem", fontsize=8.5)
 ax2 = axes1[1]
 ax2.set_xlim(-3, 1.5); ax2.set_ylim(-1.5, 1.5)
 ax2.axhline(0, color="k", lw=0.8); ax2.axvline(0, color="k", lw=0.8)
-ax2.fill_betweenx([-1.5, 1.5], -3,   0,   alpha=0.07, color="seagreen", label="Estável (esq.)")
-ax2.fill_betweenx([-1.5, 1.5],  0, 1.5,   alpha=0.07, color="crimson",  label="Instável (dir.)")
+ax2.fill_betweenx([-1.5, 1.5], -3,  0,   alpha=0.07, color="seagreen", label="Estável (esq.)")
+ax2.fill_betweenx([-1.5, 1.5],  0, 1.5,  alpha=0.07, color="crimson",  label="Instável (dir.)")
 ax2.plot(-1, 0, "x", color=COR["saida"], ms=12, mew=2.5, label=r"polo $s=-a$")
 ax2.text(-1, 0.22, r"$-a$", ha="center", fontsize=9, color=COR["saida"])
 ax2.set_xlabel(r"$\sigma$", fontsize=8); ax2.set_ylabel(r"$j\omega$", fontsize=8)
@@ -233,7 +262,7 @@ st.header("2. Resposta ao Degrau — Componentes e Especificações")
 st.markdown(r"""
 ### 2.1 Dedução analítica
 
-Para entrada degrau de amplitude $k_r$, ou seja $X(s) = k_r/s$, a saída em Laplace é:
+Para entrada degrau de amplitude $k_r$, $X(s) = k_r/s$:
 
 $$Y(s) = H(s)\cdot\frac{k_r}{s} = \frac{k\,k_r}{s\,(s+a)}$$
 
@@ -246,14 +275,10 @@ $$\boxed{y(t) = y_f(t) + y_n(t) = \frac{k\,k_r}{a}\bigl(1 - e^{-at}\bigr), \quad
 | $y_f(t) = k\,k_r/a$ | Resposta **forçada** | Componente de estado nulo (*zero-state*) |
 | $y_n(t) = -(k\,k_r/a)\,e^{-at}$ | Resposta **natural** | Componente de entrada nula (*zero-input*) |
 
-> $y_f$ depende apenas da entrada (estado inicial zero); $y_n$ depende apenas do estado inicial.
-> Para condição inicial nula, $y_n$ é determinada pelo transitório imposto pela própria entrada.
-
 ### 2.2 Especificações de desempenho
 
 | Parâmetro | Símbolo | Fórmula |
 |---|---|---|
-| Valor inicial | $y(0^+)$ | $0$ |
 | Valor final | $y(\infty)$ | $k\,k_r/a$ |
 | Constante de tempo | $\tau$ | $1/a$ |
 | Tempo de subida | $T_r$ | $\approx 2{,}2/a$ |
@@ -263,32 +288,26 @@ $$\boxed{y(t) = y_f(t) + y_n(t) = \frac{k\,k_r}{a}\bigl(1 - e^{-at}\bigr), \quad
 
 ### 2.3 Identificação experimental
 
-Medida a curva $y(t)$ após um degrau $k_r$ conhecido:
-
 $$a = \frac{4}{T_{s_{2\%}}} \approx \frac{2{,}2}{T_r}, \qquad k = \frac{a\cdot y(\infty)}{k_r}$$
 """)
 
 k_val2 = 1.4; a_val2 = 0.7; kr_val2 = 1.0
 t_arr2 = np.linspace(0, 12, 600)
 yinf2 = k_val2 * kr_val2 / a_val2
-tau2   = 1.0 / a_val2
-Tr2    = 2.2 / a_val2
-Ts2_2  = 4.0 / a_val2
-yf2    =  yinf2 * np.ones_like(t_arr2)
-yn2    = -yinf2 * np.exp(-a_val2 * t_arr2)
-y2     = yf2 + yn2
+tau2   = 1.0 / a_val2; Tr2 = 2.2 / a_val2; Ts2_v = 4.0 / a_val2
+yf2 = yinf2 * np.ones_like(t_arr2)
+yn2 = -yinf2 * np.exp(-a_val2 * t_arr2)
+y2  = yf2 + yn2
 
 fig2, axes2 = plt.subplots(1, 2, figsize=(9.5, 3.4))
-
 ax = axes2[0]
 ax.plot(t_arr2, yf2, "--", color=COR["ref"],    lw=1.4, label=r"$y_f(t)=k\,k_r/a$ (forçada)")
 ax.plot(t_arr2, yn2, ":",  color=COR["natural"], lw=1.6, label=r"$y_n(t)=-(k\,k_r/a)e^{-at}$ (natural)")
 ax.plot(t_arr2, y2,        color=COR["degrau"],  lw=2.0, label=r"$y(t)=y_f+y_n$")
 ax.axhline(yinf2, color="gray", lw=0.8, ls="--")
 ax.axvline(tau2,  color="purple", lw=0.9, ls=":")
-ax.annotate(r"$\tau=1/a$", xy=(tau2, 0.63*yinf2),
-            xytext=(tau2+0.7, 0.48*yinf2), fontsize=8, color="purple",
-            arrowprops=dict(arrowstyle="->", color="purple", lw=0.8))
+ax.annotate(r"$\tau=1/a$", xy=(tau2, 0.63*yinf2), xytext=(tau2+0.7, 0.48*yinf2),
+            fontsize=8, color="purple", arrowprops=dict(arrowstyle="->", color="purple", lw=0.8))
 ax.text(11.5, yinf2+0.04, r"$y(\infty)$", ha="right", fontsize=8, color="gray")
 estilo(ax, xlabel="t (s)")
 ax.set_title(rf"Componentes — $H(s)={k_val2}/(s+{a_val2})$, degrau $k_r={kr_val2}$", fontsize=8.5)
@@ -296,11 +315,11 @@ ax.legend(fontsize=7)
 
 ax2 = axes2[1]
 ax2.plot(t_arr2, y2, color=COR["degrau"], lw=2.0)
-for frac, cor, lb in [(1.00, "gray", ""), (0.98, "brown", "98%"),
-                      (0.90, "olive", "90%"), (0.63, "purple", "63%"), (0.10, "olive", "10%")]:
+for frac, cor, lb in [(1.00,"gray",""), (0.98,"brown","98%"),
+                      (0.90,"olive","90%"), (0.63,"purple","63%"), (0.10,"olive","10%")]:
     ax2.axhline(frac*yinf2, color=cor, lw=0.7, ls="--")
     if lb: ax2.text(12.1, frac*yinf2, lb, va="center", fontsize=7, color=cor)
-for xv, cor, lb in [(tau2, "purple", r"$\tau$"), (Tr2, "olive", r"$T_r$"), (Ts2_2, "brown", r"$T_s$")]:
+for xv, cor, lb in [(tau2,"purple",r"$\tau$"), (Tr2,"olive",r"$T_r$"), (Ts2_v,"brown",r"$T_s$")]:
     ax2.axvline(xv, color=cor, lw=0.9, ls=":")
     ax2.text(xv+0.1, -0.18, lb, fontsize=8, color=cor)
 estilo(ax2, xlabel="t (s)")
@@ -310,85 +329,33 @@ plt.tight_layout()
 show_fig(fig2, 0.88)
 
 # ── Explorador interativo seção 2 ─────────────────────────────────────────────
-st.markdown("### 🎛️ Explorador Interativo — Resposta ao Degrau")
-st.caption("Cada slider altera **um parâmetro** mantendo os demais fixos. "
-           "Slider **azul** = $k$ · **vermelho** = $a$ · **verde** = $k_r$")
+st.markdown("### 🎛️ Explorador — Resposta ao Degrau")
+st.caption("Mova os sliders e observe como cada parâmetro afeta $y(\\infty)$, $\\tau$ e $T_s$.")
 
-t_s2 = np.linspace(0, 18, 700)
-k_grid2  = np.round(np.arange(0.5, 5.1, 0.5), 2)
-a_grid2  = np.round(np.arange(0.2, 3.0, 0.2), 2)
-kr_grid2 = np.round(np.arange(0.5, 3.1, 0.5), 2)
-K2_DEF=2.0; A2_DEF=0.8; KR2_DEF=1.0
-nk2=len(k_grid2); na2=len(a_grid2); nkr2=len(kr_grid2)
-total2=nk2+na2+nkr2
-traces2=[]
+c2a, c2b = st.columns([1, 2])
+with c2a:
+    k2 = st.slider("Ganho $k$",  0.5, 5.0, 2.0, 0.1, key="k2")
+    a2 = st.slider("Polo $a$",   0.2, 3.0, 0.8, 0.1, key="a2")
+    kr2 = st.slider("Degrau $k_r$", 0.5, 3.0, 1.0, 0.1, key="kr2")
+    yinf_e2 = k2 * kr2 / a2
+    st.info(f"$y(\\infty)={yinf_e2:.3f}$ · $\\tau={1/a2:.2f}$ s · $T_s\\approx{4/a2:.2f}$ s")
 
-for kv in k_grid2:
-    yinf=kv*KR2_DEF/A2_DEF; y=yinf*(1-np.exp(-A2_DEF*t_s2))
-    traces2.append(go.Scatter(x=t_s2, y=y, mode="lines",
-        line=dict(color="#1f77b4", width=2.2),
-        visible=(abs(kv-K2_DEF)<1e-9), showlegend=False,
-        hovertemplate=f"k={kv}, a={A2_DEF}, kr={KR2_DEF}<br>t=%{{x:.2f}}s  y=%{{y:.3f}}<extra></extra>"))
-
-for av in a_grid2:
-    yinf=K2_DEF*KR2_DEF/av; y=yinf*(1-np.exp(-av*t_s2))
-    traces2.append(go.Scatter(x=t_s2, y=y, mode="lines",
-        line=dict(color="#d62728", width=2.2),
-        visible=(abs(av-A2_DEF)<1e-9), showlegend=False,
-        hovertemplate=f"k={K2_DEF}, a={av}, kr={KR2_DEF}<br>t=%{{x:.2f}}s  y=%{{y:.3f}}<extra></extra>"))
-
-for krv in kr_grid2:
-    yinf=K2_DEF*krv/A2_DEF; y=yinf*(1-np.exp(-A2_DEF*t_s2))
-    traces2.append(go.Scatter(x=t_s2, y=y, mode="lines",
-        line=dict(color="#2ca02c", width=2.2),
-        visible=(abs(krv-KR2_DEF)<1e-9), showlegend=False,
-        hovertemplate=f"k={K2_DEF}, a={A2_DEF}, kr={krv}<br>t=%{{x:.2f}}s  y=%{{y:.3f}}<extra></extra>"))
-
-def vis2_fn(idx): v=[False]*total2; v[idx]=True; return v
-def idx_def(g, v): return int(np.where(np.isclose(g, v))[0][0])
-
-sk2=[dict(method="update", label=str(kv),
-    args=[{"visible": vis2_fn(i)},
-          {"title.text": f"k={kv} | a={A2_DEF} | kr={KR2_DEF} — y(∞)={kv*KR2_DEF/A2_DEF:.2f}  τ={1/A2_DEF:.2f}s  Ts={4/A2_DEF:.2f}s"}])
-    for i, kv in enumerate(k_grid2)]
-
-sa2=[dict(method="update", label=str(av),
-    args=[{"visible": vis2_fn(nk2+j)},
-          {"title.text": f"k={K2_DEF} | a={av} | kr={KR2_DEF} — y(∞)={K2_DEF*KR2_DEF/av:.2f}  τ={1/av:.2f}s  Ts={4/av:.2f}s"}])
-    for j, av in enumerate(a_grid2)]
-
-skr2=[dict(method="update", label=str(krv),
-    args=[{"visible": vis2_fn(nk2+na2+m)},
-          {"title.text": f"k={K2_DEF} | a={A2_DEF} | kr={krv} — y(∞)={K2_DEF*krv/A2_DEF:.2f}  τ={1/A2_DEF:.2f}s  Ts={4/A2_DEF:.2f}s"}])
-    for m, krv in enumerate(kr_grid2)]
-
-fig_exp2 = go.Figure(data=traces2)
-fig_exp2.update_layout(
-    title=dict(text=f"k={K2_DEF} | a={A2_DEF} | kr={KR2_DEF} — y(∞)={K2_DEF*KR2_DEF/A2_DEF:.2f}  τ={1/A2_DEF:.2f}s  Ts={4/A2_DEF:.2f}s", font=dict(size=12)),
-    xaxis=dict(title="t (s)"),
-    yaxis=dict(title="y(t)"),
-    height=460,
-    margin=dict(l=60, r=20, t=60, b=140),
-    template="plotly_white",
-    showlegend=False,
-    hovermode="x unified",
-    sliders=[
-        dict(active=idx_def(k_grid2, K2_DEF),
-             currentvalue=dict(prefix="k = ", font=dict(size=13, color="#1f77b4"), xanchor="left"),
-             pad=dict(t=10, b=0), x=0.0, y=0.26, len=1.0,
-             steps=sk2, tickcolor="#1f77b4"),
-        dict(active=idx_def(a_grid2, A2_DEF),
-             currentvalue=dict(prefix="a = ", font=dict(size=13, color="#d62728"), xanchor="left"),
-             pad=dict(t=10, b=0), x=0.0, y=0.14, len=1.0,
-             steps=sa2, tickcolor="#d62728"),
-        dict(active=idx_def(kr_grid2, KR2_DEF),
-             currentvalue=dict(prefix="kr = ", font=dict(size=13, color="#2ca02c"), xanchor="left"),
-             pad=dict(t=10, b=0), x=0.0, y=0.02, len=1.0,
-             steps=skr2, tickcolor="#2ca02c"),
-    ]
-)
-fig_exp2.add_hline(y=0, line_width=0.6, line_color="black")
-st.plotly_chart(fig_exp2, use_container_width=True)
+with c2b:
+    t_e2 = np.linspace(0, 18, 700)
+    y_e2 = yinf_e2 * (1 - np.exp(-a2 * t_e2))
+    fig_e2 = go.Figure()
+    fig_e2.add_hline(y=yinf_e2, line_dash="dash", line_color="gray",
+                     annotation_text=f"y(∞)={yinf_e2:.3f}", annotation_position="top right")
+    fig_e2.add_trace(go.Scatter(x=t_e2, y=y_e2, mode="lines",
+                                line=dict(color="#1f77b4", width=2.5), name="y(t)"))
+    fig_e2.add_vline(x=1/a2, line_dash="dot", line_color="purple",
+                     annotation_text=f"τ={1/a2:.2f}s", annotation_position="top right")
+    fig_e2.add_vline(x=4/a2, line_dash="dot", line_color="brown",
+                     annotation_text=f"Ts={4/a2:.2f}s", annotation_position="top right")
+    fig_e2.update_layout(height=320, margin=dict(t=20, b=20, l=20, r=20),
+                         xaxis_title="t (s)", yaxis_title="y(t)",
+                         template="plotly_white", showlegend=False)
+    st.plotly_chart(fig_e2, use_container_width=True)
 
 st.divider()
 
@@ -401,7 +368,7 @@ st.header("3. Sistemas de Grau Relativo 1 — Exemplos e Efeito dos Parâmetros"
 st.markdown(r"""
 ### 3.1 Exemplos físicos
 
-Todos os sistemas abaixo seguem $H(s) = k/(s+a)$, com $k$ e $a$ determinados pelos parâmetros físicos:
+Todos os sistemas abaixo seguem $H(s) = k/(s+a)$:
 
 | Domínio | Sistema ($u \to y$) | $k$ | $a$ |
 |---|---|---|---|
@@ -412,144 +379,103 @@ Todos os sistemas abaixo seguem $H(s) = k/(s+a)$, com $k$ e $a$ determinados pel
 | Térmico | Câmara isolada: $\dot{Q} \to T$ | $1/C_t$ | $1/(R_t C_t)$ |
 | Hidráulico | Reservatório: $Q_i \to h$ | $1/C_h$ | $1/(R_h C_h)$ |
 
-> Nos sistemas térmico e hidráulico, $R$ e $C$ representam a resistência e a capacitância do domínio correspondente.
+### 3.2 Efeito dos parâmetros
 
-### 3.2 Efeito dos parâmetros na resposta ao degrau
+**Variação de $k$** (polo $a$ fixo): altera $y(\infty) = k/a$ sem afetar $\tau = 1/a$.
 
-**Variação de $k$ (polo $a$ fixo):** altera o **ganho estático** $k' = k/a$ sem afetar a velocidade de resposta ($\tau = 1/a$ invariante).
-
-**Variação de $a$ (ganho $k$ fixo):** desloca o polo para $s = -a$. Aumentar $a$ afasta o polo da origem, reduz $\tau = 1/a$ e torna a resposta mais rápida, porém reduz $y(\infty) = k/a$.
+**Variação de $a$** (ganho $k$ fixo): desloca o polo — maior $a$ → resposta mais rápida, menor $y(\infty)$.
 """)
 
 t_arr3 = np.linspace(0, 12, 600)
-a_fix3=0.8; k_fix3=1.0
+a_fix3 = 0.8; k_fix3 = 1.0
 
 fig3, axes3 = plt.subplots(1, 2, figsize=(9.5, 3.2))
-
 ax = axes3[0]
-ks3=[1, 2, 3, 4, 5, 6]
-colors_k3=plt.cm.viridis(np.linspace(0.15, 0.88, len(ks3)))
-for kv, col in zip(ks3, colors_k3):
+for kv, col in zip([1,2,3,4,5,6], plt.cm.viridis(np.linspace(0.15, 0.88, 6))):
     ax.plot(t_arr3, step_response(kv, a_fix3, t_arr3), color=col, label=f"k={kv}")
 ax.axvline(1/a_fix3, color="purple", lw=0.9, ls=":", label=rf"$\tau={1/a_fix3:.2f}$s")
-ax.set_xlim(0, 12)
-estilo(ax, xlabel="t (s)")
+ax.set_xlim(0, 12); estilo(ax, xlabel="t (s)")
 ax.set_title(rf"Variação de $k$ (polo $a={a_fix3}$ fixo)", fontsize=8.5)
 ax.legend(ncol=2, fontsize=7)
 
 ax2 = axes3[1]
-a_vals3=[0.4, 0.8, 1.2, 1.6, 2.0, 2.5]
-colors_a3=plt.cm.plasma(np.linspace(0.15, 0.88, len(a_vals3)))
-for av, col in zip(a_vals3, colors_a3):
+for av, col in zip([0.4,0.8,1.2,1.6,2.0,2.5], plt.cm.plasma(np.linspace(0.15, 0.88, 6))):
     ax2.plot(t_arr3, step_response(k_fix3, av, t_arr3), color=col, label=f"a={av}")
-ax2.axhline(k_fix3, color="gray", lw=0.8, ls="--", label=r"$y(\infty)=k/a \to 1/a$")
-ax2.set_xlim(0, 12)
-estilo(ax2, xlabel="t (s)")
+ax2.axhline(k_fix3, color="gray", lw=0.8, ls="--", label=r"$y(\infty)=k/a$")
+ax2.set_xlim(0, 12); estilo(ax2, xlabel="t (s)")
 ax2.set_title(rf"Variação de $a$ (ganho $k={k_fix3}$ fixo)", fontsize=8.5)
 ax2.legend(ncol=2, fontsize=7)
 plt.tight_layout()
 show_fig(fig3, 0.88)
 
 # Diagrama polo-zero + resposta
-k_v3=4.0; a_v3=0.8
-y3=step_response(k_v3, a_v3, t_arr3)
-yinf3=k_v3/a_v3
-Ts3_idx=np.argmax(y3>=0.98*yinf3); Ts3_med=t_arr3[Ts3_idx]
+k_v3=4.0; a_v3=0.8; t_arr3b = np.linspace(0, 12, 600)
+y3b=step_response(k_v3, a_v3, t_arr3b); yinf3b=k_v3/a_v3
+Ts3_idx=np.argmax(y3b>=0.98*yinf3b); Ts3_med=t_arr3b[Ts3_idx]
 
 fig3b, axes3b = plt.subplots(1, 2, figsize=(9.5, 3.2))
 ax = axes3b[0]
 ax.axhline(0, color="k", lw=0.8); ax.axvline(0, color="k", lw=0.8)
-ax.fill_betweenx([-1.5, 1.5], -5, 0, alpha=0.07, color="seagreen")
-ax.fill_betweenx([-1.5, 1.5],  0, 1.5, alpha=0.07, color="crimson")
+ax.fill_betweenx([-1.5,1.5], -5, 0, alpha=0.07, color="seagreen")
+ax.fill_betweenx([-1.5,1.5],  0, 1.5, alpha=0.07, color="crimson")
 ax.plot(-a_v3, 0, "x", color=COR["saida"], ms=14, mew=3, label=rf"polo $s={-a_v3}$")
 ax.set_xlim(-5, 1.5); ax.set_ylim(-1.5, 1.5)
 ax.set_xlabel(r"$\sigma$", fontsize=8); ax.set_ylabel(r"$j\omega$", fontsize=8)
 ax.set_title(rf"Plano $s$: $H(s)={k_v3:.0f}/(s+{a_v3})$", fontsize=8.5)
-ax.spines[["right", "top"]].set_visible(False); ax.legend(fontsize=7.5)
+ax.spines[["right","top"]].set_visible(False); ax.legend(fontsize=7.5)
 
 ax2 = axes3b[1]
-ax2.plot(t_arr3, y3, color=COR["degrau"], lw=2.0)
-ax2.axhline(yinf3, color="gray", lw=0.8, ls="--")
-ax2.axhline(0.98*yinf3, color="brown", lw=0.7, ls=":")
+ax2.plot(t_arr3b, y3b, color=COR["degrau"], lw=2.0)
+ax2.axhline(yinf3b, color="gray", lw=0.8, ls="--")
+ax2.axhline(0.98*yinf3b, color="brown", lw=0.7, ls=":")
 ax2.axvline(Ts3_med, color="brown", lw=0.9, ls=":")
 ax2.axvline(1/a_v3, color="purple", lw=0.9, ls=":")
-ax2.text(Ts3_med+0.1, 0.5, r"$T_{s_{2\%}}$" + f"={Ts3_med:.1f}s", color="brown", fontsize=7.5)
+ax2.text(Ts3_med+0.1, 0.5, r"$T_{s_{2\%}}$"+f"={Ts3_med:.1f}s", color="brown", fontsize=7.5)
 ax2.text(1/a_v3+0.1, 0.3, rf"$\tau={1/a_v3:.2f}$s", color="purple", fontsize=7.5)
-ax2.text(11.8, yinf3+0.15, f"$y(\\infty)={yinf3:.1f}$", fontsize=7.5, ha="right")
-estilo(ax2, xlabel="t (s)")
-ax2.set_title("Resposta ao degrau unitário", fontsize=8.5)
+ax2.text(11.8, yinf3b+0.15, f"$y(\\infty)={yinf3b:.1f}$", fontsize=7.5, ha="right")
+estilo(ax2, xlabel="t (s)"); ax2.set_title("Resposta ao degrau unitário", fontsize=8.5)
 plt.tight_layout()
 show_fig(fig3b, 0.88)
 
 # ── Explorador interativo seção 3 ─────────────────────────────────────────────
-st.markdown("### 3.3 🎛️ Explorador Interativo — Plano $s$ + Resposta ao Degrau")
-st.caption("Slider **azul** = $k$ (só amplitude muda, polo fixo) · Slider **vermelho** = $a$ (polo desloca)")
+st.markdown("### 3.3 🎛️ Explorador — Plano $s$ + Resposta ao Degrau")
+st.caption("Slider **azul** altera $k$ (só amplitude) · Slider **vermelho** altera $a$ (polo desloca)")
 
-t_s3 = np.linspace(0, 15, 600)
-k_grid3=np.round(np.arange(0.5, 6.1, 0.5), 2)
-a_grid3=np.round(np.arange(0.2, 3.3, 0.2), 2)
-K3_DEF=2.0; A3_DEF=0.8
-nk3=len(k_grid3); na3=len(a_grid3)
+c3a, c3b = st.columns([1, 2])
+with c3a:
+    k3 = st.slider("Ganho $k$", 0.5, 6.0, 2.0, 0.1, key="k3")
+    a3 = st.slider("Polo $a$",  0.2, 3.0, 0.8, 0.1, key="a3")
+    st.info(f"polo $s={-a3:.2f}$ · $y(\\infty)={k3/a3:.3f}$ · $\\tau={1/a3:.2f}$ s · $T_s={4/a3:.2f}$ s")
 
-fig_exp3=make_subplots(rows=1, cols=2, subplot_titles=("Plano s", "Resposta ao degrau unitário"))
+with c3b:
+    t_e3 = np.linspace(0, 15, 600)
+    y_e3 = (k3/a3) * (1 - np.exp(-a3 * t_e3))
 
-for kv in k_grid3:
-    yinf=kv/A3_DEF; y=yinf*(1-np.exp(-A3_DEF*t_s3))
-    vis=(abs(kv-K3_DEF)<1e-9)
-    fig_exp3.add_trace(go.Scatter(x=[-A3_DEF], y=[0], mode="markers",
-        marker=dict(symbol="x", size=14, color="#d62728", line=dict(width=3, color="#d62728")),
-        visible=vis, showlegend=False,
-        hovertemplate=f"polo s={-A3_DEF:.2f}<extra>k={kv}</extra>"), row=1, col=1)
-    fig_exp3.add_trace(go.Scatter(x=t_s3, y=y, mode="lines",
-        line=dict(color="#1f77b4", width=2.2),
-        visible=vis, showlegend=False,
-        hovertemplate=f"k={kv},a={A3_DEF}<br>t=%{{x:.2f}}s y=%{{y:.3f}}<extra></extra>"), row=1, col=2)
+    fig_e3 = make_subplots(rows=1, cols=2,
+                           subplot_titles=("Plano s", "Resposta ao degrau unitário"))
+    # plano s
+    fig_e3.add_vrect(x0=-7, x1=0, fillcolor="seagreen", opacity=0.06,
+                     layer="below", line_width=0, row=1, col=1)
+    fig_e3.add_vrect(x0=0, x1=1.5, fillcolor="crimson", opacity=0.06,
+                     layer="below", line_width=0, row=1, col=1)
+    fig_e3.add_trace(go.Scatter(x=[-a3], y=[0], mode="markers",
+        marker=dict(symbol="x", size=14, color="#d62728",
+                    line=dict(width=3, color="#d62728")),
+        name="Polo", showlegend=False), row=1, col=1)
+    # resposta
+    fig_e3.add_trace(go.Scatter(x=t_e3, y=y_e3, mode="lines",
+        line=dict(color="#1f77b4", width=2.5), name="y(t)", showlegend=False), row=1, col=2)
+    fig_e3.add_hline(y=k3/a3, line_dash="dash", line_color="gray", row=1, col=2)
 
-for av in a_grid3:
-    yinf=K3_DEF/av; y=yinf*(1-np.exp(-av*t_s3))
-    vis=(abs(av-A3_DEF)<1e-9)
-    fig_exp3.add_trace(go.Scatter(x=[-av], y=[0], mode="markers",
-        marker=dict(symbol="x", size=14, color="#d62728", line=dict(width=3, color="#d62728")),
-        visible=vis, showlegend=False,
-        hovertemplate=f"polo s={-av:.2f}<extra>a={av}</extra>"), row=1, col=1)
-    fig_exp3.add_trace(go.Scatter(x=t_s3, y=y, mode="lines",
-        line=dict(color="#d62728", width=2.2),
-        visible=vis, showlegend=False,
-        hovertemplate=f"k={K3_DEF},a={av}<br>t=%{{x:.2f}}s y=%{{y:.3f}}<extra></extra>"), row=1, col=2)
-
-def vis3_fn(grp, idx):
-    v=[False]*(2*(nk3+na3))
-    base=2*({"k":0,"a":nk3}[grp]+idx)
-    v[base]=v[base+1]=True; return v
-
-sk3=[dict(method="update", label=str(kv),
-    args=[{"visible": vis3_fn("k", i)},
-          {"title": f"k={kv},a={A3_DEF} | polo s={-A3_DEF:.2f} | y(inf)={kv/A3_DEF:.3f} tau={1/A3_DEF:.2f}s Ts={4/A3_DEF:.2f}s"}])
-    for i, kv in enumerate(k_grid3)]
-sa3=[dict(method="update", label=str(av),
-    args=[{"visible": vis3_fn("a", j)},
-          {"title": f"k={K3_DEF},a={av} | polo s={-av:.2f} | y(inf)={K3_DEF/av:.3f} tau={1/av:.2f}s Ts={4/av:.2f}s"}])
-    for j, av in enumerate(a_grid3)]
-
-fig_exp3.update_layout(
-    title=dict(text=f"k={K3_DEF} | a={A3_DEF} | polo s={-A3_DEF:.2f} — y(∞)={K3_DEF/A3_DEF:.3f}  τ={1/A3_DEF:.2f}s  Ts={4/A3_DEF:.2f}s", font=dict(size=12)),
-    height=460, margin=dict(l=60, r=20, t=60, b=100), template="plotly_white",
-    sliders=[
-        dict(active=idx_def(k_grid3, K3_DEF),
-             currentvalue=dict(prefix="k = ", font=dict(size=13, color="#1f77b4"), xanchor="left"),
-             pad=dict(t=10, b=0), x=0.0, y=0.14, len=1.0, steps=sk3, tickcolor="#1f77b4"),
-        dict(active=idx_def(a_grid3, A3_DEF),
-             currentvalue=dict(prefix="a = ", font=dict(size=13, color="#d62728"), xanchor="left"),
-             pad=dict(t=10, b=0), x=0.0, y=0.02, len=1.0, steps=sa3, tickcolor="#d62728"),
-    ]
-)
-fig_exp3.update_xaxes(title_text="σ", range=[-7, 1.5], zeroline=True, zerolinecolor="black", row=1, col=1)
-fig_exp3.update_yaxes(title_text="jω", range=[-1.5, 1.5], zeroline=True, zerolinecolor="black", row=1, col=1)
-fig_exp3.update_xaxes(title_text="t (s)", row=1, col=2)
-fig_exp3.update_yaxes(title_text="y(t)", row=1, col=2)
-fig_exp3.add_vrect(x0=-7, x1=0, fillcolor="seagreen", opacity=0.05, layer="below", line_width=0, row=1, col=1)
-fig_exp3.add_vrect(x0=0, x1=1.5, fillcolor="crimson", opacity=0.05, layer="below", line_width=0, row=1, col=1)
-st.plotly_chart(fig_exp3, use_container_width=True)
+    fig_e3.update_xaxes(title_text="σ", range=[-7, 1.5],
+                        zeroline=True, zerolinecolor="black", row=1, col=1)
+    fig_e3.update_yaxes(title_text="jω", range=[-1.5, 1.5],
+                        zeroline=True, zerolinecolor="black", row=1, col=1)
+    fig_e3.update_xaxes(title_text="t (s)", row=1, col=2)
+    fig_e3.update_yaxes(title_text="y(t)", row=1, col=2)
+    fig_e3.update_layout(height=320, margin=dict(t=30, b=10, l=20, r=10),
+                         template="plotly_white")
+    st.plotly_chart(fig_e3, use_container_width=True)
 
 st.divider()
 
@@ -562,7 +488,7 @@ st.header("4. Sistemas de Grau Relativo 0 — Efeito do Zero")
 st.markdown(r"""
 ### 4.1 Função de transferência com zero finito
 
-Adicionando um zero em $s = -b$ ao sistema de 1ª ordem ($n^* = 1 - 1 = 0$):
+Adicionando um zero em $s = -b$ ($n^* = 1 - 1 = 0$):
 
 $$H'(s) = \frac{k(s+b)}{s+a} = \frac{k\,b}{s+a} + \frac{k\,s}{s+a}$$
 
@@ -572,24 +498,24 @@ $$\boxed{y'(t) = \frac{k\,b}{a} + k\!\left(1 - \frac{b}{a}\right)e^{-at}, \quad 
 
 Valores notáveis: $\quad y'(0^+) = k$ (independe de $b$), $\quad y'(\infty) = k\,b/a$
 
-O zero **não altera $\tau = 1/a$**, mas modifica o valor inicial e o valor final.
+O zero **não altera** $\tau = 1/a$.
 
 ### 4.3 Classificação pelo sinal de $b$
 
-| Posição do zero | Característica | Comportamento transiente |
+| Posição do zero | Característica | Comportamento |
 |---|---|---|
-| $b > 0$ — semiplano esquerdo | Sistema de **fase mínima** | $y'(0^+)=k>0$, $y'(\infty)=kb/a>0$; resposta mais rápida |
-| $b = a$ — coincide com o polo | **Cancelamento polo-zero** | $H'(s) = k$ (ganho puro); resposta instantânea |
-| $b < 0$ — semiplano direito | Sistema de **fase não-mínima** | $y'(0^+)=k>0$, mas $y'(\infty)=kb/a<0$; resposta inverte de sinal |
+| $b > 0$ — semiplano esquerdo | Sistema de **fase mínima** | $y'(\infty)>0$; resposta mais rápida |
+| $b = a$ — coincide com o polo | **Cancelamento polo-zero** | $H'(s) = k$; resposta instantânea |
+| $b < 0$ — semiplano direito | Sistema de **fase não-mínima** | $y'(\infty)<0$; saída inverte de sinal |
 
-> **Fase não-mínima** ($b<0$): $y'(0^+)$ e $y'(\infty)$ têm sinais opostos — a saída começa subindo e termina no negativo. Esse comportamento dificulta o controle.
+> **Fase não-mínima** ($b<0$): $y'(0^+)$ e $y'(\infty)$ têm sinais opostos — dificulta o controle.
 """)
 
 t_arr4 = np.linspace(0, 12, 600)
 k_v4=4.0; a_v4=0.8
-cenarios4=[(3.0,  "b=+3 (zero esq., fase mínima)",       COR["natural"]),
-            (-3.0, "b=−3 (zero dir., fase não-mínima)",   COR["saida"]),
-            (0.8,  "b=a=0.8 (polo-zero cancela)",          COR["degrau"])]
+cenarios4=[(3.0, "b=+3 (fase mínima)",      COR["natural"]),
+            (-3.0,"b=−3 (fase não-mínima)",  COR["saida"]),
+            (0.8, "b=a=0.8 (cancela polo)",  COR["degrau"])]
 
 fig4a, axes4a = plt.subplots(1, 3, figsize=(9.5, 3.2))
 for ax, (bv, lbl, col) in zip(axes4a, cenarios4):
@@ -598,121 +524,83 @@ for ax, (bv, lbl, col) in zip(axes4a, cenarios4):
     ax.axhline(y[-1], color="gray", lw=0.8, ls="--")
     ax.axhline(0, color="k", lw=0.5)
     estilo(ax, xlabel="t (s)"); ax.set_title(lbl, fontsize=8)
-    ins=ax.inset_axes([0.54, 0.06, 0.44, 0.42])
+    ins = ax.inset_axes([0.54, 0.06, 0.44, 0.42])
     ins.axhline(0, color="k", lw=0.6); ins.axvline(0, color="k", lw=0.6)
     ins.plot(-a_v4, 0, "x", color=COR["saida"], ms=9, mew=2.0)
-    ins.plot(-bv, 0, "o", color=COR["natural"], ms=7, mfc="white", mew=1.8)
+    ins.plot(-bv,   0, "o", color=COR["natural"], ms=7, mfc="white", mew=1.8)
     ins.set_xlim(-5, 3); ins.set_ylim(-1.2, 1.2)
     ins.set_xticks([]); ins.set_yticks([]); ins.set_title("Plano s", fontsize=7)
 plt.tight_layout()
 show_fig(fig4a, 0.88)
 
-# Curvas sobrepostas
-b_vals4=[-5.0, -3.0, -1.0, 1.0, 3.0, 5.0]
+b_vals4=[-5.0,-3.0,-1.0,1.0,3.0,5.0]
 colors4=plt.cm.RdYlGn(np.linspace(0.08, 0.92, len(b_vals4)))
-
 fig4b, axes4b = plt.subplots(1, 2, figsize=(9.5, 3.2))
 ax_pz4=axes4b[0]; ax_r4=axes4b[1]
 ax_pz4.axhline(0, color="k", lw=0.8); ax_pz4.axvline(0, color="k", lw=0.8)
-ax_pz4.fill_betweenx([-1.5, 1.5], -8, 0, alpha=0.06, color="seagreen")
-ax_pz4.fill_betweenx([-1.5, 1.5],  0, 4, alpha=0.06, color="crimson")
-ax_pz4.plot(-a_v4, 0, "x", color=COR["saida"], ms=14, mew=3, label="polo")
+ax_pz4.fill_betweenx([-1.5,1.5],-8,0,alpha=0.06,color="seagreen")
+ax_pz4.fill_betweenx([-1.5,1.5], 0,4,alpha=0.06,color="crimson")
+ax_pz4.plot(-a_v4,0,"x",color=COR["saida"],ms=14,mew=3,label="polo")
 for bv, col in zip(b_vals4, colors4):
-    y=step_response_zero(k_v4, a_v4, bv, t_arr4)
+    y = step_response_zero(k_v4, a_v4, bv, t_arr4)
     ax_r4.plot(t_arr4, y, color=col, lw=1.8, label=f"b={bv:+.0f}")
     ax_pz4.plot(-bv, 0, "o", color=col, ms=8, mfc="white", mew=2.0, label=f"b={bv:+.0f}")
-ax_pz4.set_xlim(-8, 4); ax_pz4.set_ylim(-1.5, 1.5)
-ax_pz4.set_xlabel(r"$\sigma$", fontsize=8); ax_pz4.set_ylabel(r"$j\omega$", fontsize=8)
-ax_pz4.set_title(r"Plano $s$ — zeros e polo fixo", fontsize=8.5)
-ax_pz4.spines[["right", "top"]].set_visible(False); ax_pz4.legend(ncol=2, fontsize=6.5)
-ax_r4.axhline(0, color="k", lw=0.5)
-estilo(ax_r4, xlabel="t (s)")
-ax_r4.set_title(r"Resposta ao degrau — variação de $b$", fontsize=8.5)
-ax_r4.legend(ncol=2, fontsize=7)
+ax_pz4.set_xlim(-8,4); ax_pz4.set_ylim(-1.5,1.5)
+ax_pz4.set_xlabel(r"$\sigma$",fontsize=8); ax_pz4.set_ylabel(r"$j\omega$",fontsize=8)
+ax_pz4.set_title(r"Plano $s$ — zeros e polo fixo",fontsize=8.5)
+ax_pz4.spines[["right","top"]].set_visible(False); ax_pz4.legend(ncol=2,fontsize=6.5)
+ax_r4.axhline(0,color="k",lw=0.5); estilo(ax_r4,xlabel="t (s)")
+ax_r4.set_title(r"Resposta ao degrau — variação de $b$",fontsize=8.5)
+ax_r4.legend(ncol=2,fontsize=7)
 plt.tight_layout()
 show_fig(fig4b, 0.88)
 
 # ── Explorador interativo seção 4 ─────────────────────────────────────────────
-st.markdown("### 4.4 🎛️ Explorador Interativo — Sistema com Zero")
-st.caption("○ = zero · × = polo · Slider **azul** = $k$ · **vermelho** = $a$ · **verde** = $b$")
+st.markdown("### 4.4 🎛️ Explorador — Sistema com Zero")
+st.caption("○ = zero · × = polo · Varie $b$ de positivo para negativo e observe a inversão de $y(\\infty)$")
 
-t_s4 = np.linspace(0, 15, 600)
-k_grid4=np.round(np.arange(0.5, 6.1, 0.5), 2)
-a_grid4=np.round(np.arange(0.2, 3.3, 0.2), 2)
-b_grid4=np.round(np.arange(-5.0, 5.1, 0.5), 2)
-K4_DEF=2.0; A4_DEF=0.8; B4_DEF=2.0
-nk4=len(k_grid4); na4=len(a_grid4); nb4=len(b_grid4)
+c4a, c4b = st.columns([1, 2])
+with c4a:
+    k4 = st.slider("Ganho $k$", 0.5, 6.0, 2.0, 0.1, key="k4")
+    a4 = st.slider("Polo $a$",  0.2, 3.0, 0.8, 0.1, key="a4")
+    b4 = st.slider("Zero $b$", -5.0, 5.0, 2.0, 0.1, key="b4")
+    yinf_e4 = k4*b4/a4
+    st.info(f"polo $s={-a4:.2f}$ · zero $s={-b4:.2f}$\n\n$y(0^+)={k4:.2f}$ · $y(\\infty)={yinf_e4:.3f}$ · $\\tau={1/a4:.2f}$ s")
 
-fig_exp4=make_subplots(rows=1, cols=2, subplot_titles=("Plano s", "Resposta ao degrau"))
+with c4b:
+    t_e4 = np.linspace(0, 15, 600)
+    y_e4 = step_response_zero(k4, a4, b4, t_e4)
 
-def add_grp4(grid, fk, fa, fb, vary, ctrace, czero):
-    for val in grid:
-        kv=val if vary=="k" else fk
-        av=val if vary=="a" else fa
-        bv=val if vary=="b" else fb
-        def_val={"k":fk,"a":fa,"b":fb}[vary]
-        vis=(abs(val-def_val)<1e-9)
-        s_h=lti([kv, kv*bv], [1, av])
-        _, y=sc_step(s_h, T=t_s4)
-        fig_exp4.add_trace(go.Scatter(x=[-av], y=[0], mode="markers",
-            marker=dict(symbol="x", size=14, color="#d62728", line=dict(width=3, color="#d62728")),
-            visible=vis, showlegend=False,
-            hovertemplate=f"polo s={-av:.2f}<extra>{vary}={val}</extra>"), row=1, col=1)
-        fig_exp4.add_trace(go.Scatter(x=[-bv], y=[0], mode="markers",
-            marker=dict(symbol="circle-open", size=12, color=czero, line=dict(width=2.5)),
-            visible=vis, showlegend=False,
-            hovertemplate=f"zero s={-bv:.2f}<extra>{vary}={val}</extra>"), row=1, col=1)
-        fig_exp4.add_trace(go.Scatter(x=t_s4, y=y, mode="lines",
-            line=dict(color=ctrace, width=2.2),
-            visible=vis, showlegend=False,
-            hovertemplate=f"k={kv},a={av},b={bv}<br>t=%{{x:.2f}}s y=%{{y:.3f}}<extra></extra>"), row=1, col=2)
+    fig_e4 = make_subplots(rows=1, cols=2,
+                           subplot_titles=("Plano s", "Resposta ao degrau"))
+    fig_e4.add_vrect(x0=-8, x1=0, fillcolor="seagreen", opacity=0.06,
+                     layer="below", line_width=0, row=1, col=1)
+    fig_e4.add_vrect(x0=0, x1=4, fillcolor="crimson", opacity=0.06,
+                     layer="below", line_width=0, row=1, col=1)
+    fig_e4.add_trace(go.Scatter(x=[-a4], y=[0], mode="markers",
+        marker=dict(symbol="x", size=14, color="#d62728",
+                    line=dict(width=3, color="#d62728")),
+        name="Polo", showlegend=True), row=1, col=1)
+    fig_e4.add_trace(go.Scatter(x=[-b4], y=[0], mode="markers",
+        marker=dict(symbol="circle-open", size=14, color="#2ca02c",
+                    line=dict(width=2.5, color="#2ca02c")),
+        name="Zero", showlegend=True), row=1, col=1)
+    fig_e4.add_trace(go.Scatter(x=t_e4, y=y_e4, mode="lines",
+        line=dict(color="#2ca02c", width=2.5),
+        name="y(t)", showlegend=False), row=1, col=2)
+    fig_e4.add_hline(y=yinf_e4, line_dash="dash", line_color="gray", row=1, col=2)
+    fig_e4.add_hline(y=0, line_width=0.8, line_color="black", row=1, col=2)
 
-add_grp4(k_grid4, K4_DEF, A4_DEF, B4_DEF, "k", "#1f77b4", "#1f77b4")
-add_grp4(a_grid4, K4_DEF, A4_DEF, B4_DEF, "a", "#d62728", "#d62728")
-add_grp4(b_grid4, K4_DEF, A4_DEF, B4_DEF, "b", "#2ca02c", "#2ca02c")
-
-def vis4_fn(grp, idx):
-    v=[False]*(3*(nk4+na4+nb4))
-    base=3*({"k":0,"a":nk4,"b":nk4+na4}[grp]+idx)
-    v[base]=v[base+1]=v[base+2]=True; return v
-
-def mk_steps4(grid, grp, fk, fa, fb):
-    steps=[]
-    for i, val in enumerate(grid):
-        kv=val if grp=="k" else fk
-        av=val if grp=="a" else fa
-        bv=val if grp=="b" else fb
-        yinf=kv*bv/av if av>0 else 0
-        steps.append(dict(method="update", label=str(val),
-            args=[{"visible": vis4_fn(grp, i)},
-                  {"title": f"{grp}={val} | polo s={-av:.2f} zero s={-bv:.2f} | y(inf)={yinf:.3f} tau={1/av:.2f}s"}]))
-    return steps
-
-fig_exp4.update_layout(
-    title=dict(text=f"k={K4_DEF} | a={A4_DEF} | b={B4_DEF} — polo s={-A4_DEF:.2f}  zero s={-B4_DEF:.2f}  y(∞)={K4_DEF*B4_DEF/A4_DEF:.3f}  τ={1/A4_DEF:.2f}s", font=dict(size=12)),
-    height=480, margin=dict(l=60, r=20, t=60, b=140), template="plotly_white",
-    sliders=[
-        dict(active=idx_def(k_grid4, K4_DEF),
-             currentvalue=dict(prefix="k = ", font=dict(size=13, color="#1f77b4"), xanchor="left"),
-             pad=dict(t=10, b=0), x=0.0, y=0.26, len=1.0,
-             steps=mk_steps4(k_grid4, "k", K4_DEF, A4_DEF, B4_DEF), tickcolor="#1f77b4"),
-        dict(active=idx_def(a_grid4, A4_DEF),
-             currentvalue=dict(prefix="a = ", font=dict(size=13, color="#d62728"), xanchor="left"),
-             pad=dict(t=10, b=0), x=0.0, y=0.14, len=1.0,
-             steps=mk_steps4(a_grid4, "a", K4_DEF, A4_DEF, B4_DEF), tickcolor="#d62728"),
-        dict(active=idx_def(b_grid4, B4_DEF),
-             currentvalue=dict(prefix="b = ", font=dict(size=13, color="#2ca02c"), xanchor="left"),
-             pad=dict(t=10, b=0), x=0.0, y=0.02, len=1.0,
-             steps=mk_steps4(b_grid4, "b", K4_DEF, A4_DEF, B4_DEF), tickcolor="#2ca02c"),
-    ]
-)
-fig_exp4.update_xaxes(title_text="σ", range=[-8, 4], zeroline=True, zerolinecolor="black", row=1, col=1)
-fig_exp4.update_yaxes(title_text="jω", range=[-1.8, 1.8], zeroline=True, zerolinecolor="black", row=1, col=1)
-fig_exp4.update_xaxes(title_text="t (s)", row=1, col=2)
-fig_exp4.update_yaxes(title_text="y(t)", row=1, col=2)
-fig_exp4.add_vrect(x0=-8, x1=0, fillcolor="seagreen", opacity=0.05, layer="below", line_width=0, row=1, col=1)
-fig_exp4.add_vrect(x0=0, x1=4, fillcolor="crimson", opacity=0.05, layer="below", line_width=0, row=1, col=1)
-st.plotly_chart(fig_exp4, use_container_width=True)
+    fig_e4.update_xaxes(title_text="σ", range=[-8, 4],
+                        zeroline=True, zerolinecolor="black", row=1, col=1)
+    fig_e4.update_yaxes(title_text="jω", range=[-1.8, 1.8],
+                        zeroline=True, zerolinecolor="black", row=1, col=1)
+    fig_e4.update_xaxes(title_text="t (s)", row=1, col=2)
+    fig_e4.update_yaxes(title_text="y(t)", row=1, col=2)
+    fig_e4.update_layout(height=320, margin=dict(t=30, b=10, l=20, r=10),
+                         template="plotly_white",
+                         legend=dict(orientation="h", y=1.1))
+    st.plotly_chart(fig_e4, use_container_width=True)
 
 st.divider()
 
@@ -733,29 +621,28 @@ A saída **cresce sem limite** — sistema **BIBO instável**.
 
 ### 5.2 Efeito de um zero adicional
 
-Para $H'(s) = k(s+b)/(s-a)$, a resposta ao degrau tem $y'(0^+) = k$ e coeficiente exponencial $k(a+b)/a$:
+Para $H'(s) = k(s+b)/(s-a)$, o coeficiente do modo instável é $k(a+b)/a$:
 
 | Zero | Coeficiente de $e^{+at}$ | Efeito |
 |---|---|---|
 | Sem zero | $k/a$ | Divergência padrão |
 | $b > 0$ (semiplano esq.) | $k(a+b)/a > k/a$ | Diverge **mais rápido** |
 | $b < 0$, $|b|< a$ | $0 < k(a+b)/a < k/a$ | Diverge **mais devagar** |
-| $b = -a$ (cancela polo) | $0$ — sistema estável! | Cancelamento instável$^*$ |
+| $b = -a$ (cancela polo) | $0$ | Cancelamento instável$^*$ |
 
-> $^*$O cancelamento polo-zero instável é perigoso na prática: qualquer perturbação excita o modo instável.
-
-> Um polo real positivo **não pode ser estabilizado** apenas por ajuste de ganho em malha aberta.
+> $^*$Cancelamento polo-zero instável é perigoso: qualquer perturbação excita o modo instável.
+> Um polo real positivo **não pode ser estabilizado** em malha aberta por ajuste de ganho.
 """)
 
 t_arr5 = np.linspace(0, 6, 500)
 k_v5=1.0; a_v5=0.5
-cenarios5=[([k_v5], [1,-a_v5],       r"$H(s)=k/(s-a)$, sem zero"),
+cenarios5=[([k_v5],          [1,-a_v5], r"$H(s)=k/(s-a)$, sem zero"),
             ([k_v5, 3*k_v5], [1,-a_v5], r"$H'(s)=k(s+3)/(s-a)$, zero esq."),
             ([k_v5,-3*k_v5], [1,-a_v5], r"$H'(s)=k(s-3)/(s-a)$, zero dir.")]
 
 fig5, axes5 = plt.subplots(1, 3, figsize=(9.5, 3.0))
 for ax, (num, den, ttl) in zip(axes5, cenarios5):
-    _, y=sc_step(lti(num, den), T=t_arr5)
+    _, y = sc_step(lti(num, den), T=t_arr5)
     ax.plot(t_arr5, y, color=COR["instavel"], lw=2.0)
     ax.axhline(0, color="k", lw=0.6, ls="--")
     estilo(ax, xlabel="t (s)"); ax.set_title(ttl, fontsize=8)
@@ -764,49 +651,42 @@ plt.tight_layout()
 show_fig(fig5, 0.85)
 
 # ── Explorador interativo seção 5 ─────────────────────────────────────────────
-st.markdown("### 5.3 🎛️ Explorador Interativo — Velocidade de Divergência")
-st.caption("Slider **vermelho** = $a$ — quanto maior $a$, mais rápida a divergência (constante de tempo $1/a$)")
+st.markdown("### 5.3 🎛️ Explorador — Velocidade de Divergência")
+st.caption("Quanto maior $a$, mais rápida a divergência (constante de tempo $1/a$)")
 
-t_s5 = np.linspace(0, 8, 500)
-a_grid5=np.round(np.arange(0.1, 2.1, 0.1), 2)
-A5_DEF=0.5; k5_val=1.0
+c5a, c5b = st.columns([1, 2])
+with c5a:
+    a5 = st.slider("Polo instável $a$", 0.1, 2.0, 0.5, 0.05, key="a5")
+    st.info(f"polo $s=+{a5:.2f}$ · $y(t) \\propto e^{{+{a5:.2f}t}}$")
 
-fig_exp5=make_subplots(rows=1, cols=2, subplot_titles=("Plano s (polo instável)", "Resposta ao degrau"))
+with c5b:
+    t_e5 = np.linspace(0, 8, 500)
+    _, y_e5 = sc_step(lti([1.0], [1, -a5]), T=t_e5)
 
-for av in a_grid5:
-    _, y=sc_step(lti([k5_val], [1,-av]), T=t_s5)
-    vis=(abs(av-A5_DEF)<1e-9)
-    fig_exp5.add_trace(go.Scatter(x=[av], y=[0], mode="markers",
-        marker=dict(symbol="x", size=14, color="#d62728", line=dict(width=3, color="#d62728")),
-        visible=vis, showlegend=False,
-        hovertemplate=f"polo s=+{av:.2f}<extra>a={av}</extra>"), row=1, col=1)
-    fig_exp5.add_trace(go.Scatter(x=t_s5, y=y, mode="lines",
-        line=dict(color="#d62728", width=2.2),
-        visible=vis, showlegend=False,
-        hovertemplate=f"a={av}<br>t=%{{x:.2f}}s y=%{{y:.1f}}<extra></extra>"), row=1, col=2)
+    fig_e5 = make_subplots(rows=1, cols=2,
+                           subplot_titles=("Plano s (polo instável)", "Resposta ao degrau"))
+    fig_e5.add_vrect(x0=-2, x1=0, fillcolor="seagreen", opacity=0.05,
+                     layer="below", line_width=0, row=1, col=1)
+    fig_e5.add_vrect(x0=0, x1=3, fillcolor="crimson", opacity=0.08,
+                     layer="below", line_width=0, row=1, col=1)
+    fig_e5.add_trace(go.Scatter(x=[a5], y=[0], mode="markers",
+        marker=dict(symbol="x", size=14, color="#d62728",
+                    line=dict(width=3, color="#d62728")),
+        name=f"polo s=+{a5:.2f}", showlegend=False), row=1, col=1)
+    fig_e5.add_trace(go.Scatter(x=t_e5, y=y_e5, mode="lines",
+        line=dict(color="#d62728", width=2.5),
+        name="y(t)", showlegend=False), row=1, col=2)
+    fig_e5.add_hline(y=0, line_width=0.8, line_color="black", row=1, col=2)
 
-def vis5_fn(i): v=[False]*(2*len(a_grid5)); v[2*i]=v[2*i+1]=True; return v
-
-steps5=[dict(method="update", label=str(av),
-    args=[{"visible": vis5_fn(i)},
-          {"title": f"Sistema instável: polo em s=+{av:.2f} | y(t) ∝ exp(+{av}·t)"}])
-    for i, av in enumerate(a_grid5)]
-
-fig_exp5.update_layout(
-    title=dict(text=f"Sistema instável — polo em s=+{A5_DEF:.2f}  |  y(t) ∝ e^(+{A5_DEF}·t)", font=dict(size=12)),
-    height=420, margin=dict(l=60, r=20, t=60, b=90), template="plotly_white",
-    sliders=[dict(active=idx_def(a_grid5, A5_DEF),
-                  currentvalue=dict(prefix="a = ", font=dict(size=13, color="#d62728"), xanchor="left"),
-                  pad=dict(t=10, b=0), x=0.0, y=0.04, len=1.0,
-                  steps=steps5, tickcolor="#d62728")]
-)
-fig_exp5.update_xaxes(title_text="σ", range=[-2, 3], zeroline=True, zerolinecolor="black", row=1, col=1)
-fig_exp5.update_yaxes(title_text="jω", range=[-1.5, 1.5], zeroline=True, zerolinecolor="black", row=1, col=1)
-fig_exp5.update_xaxes(title_text="t (s)", row=1, col=2)
-fig_exp5.update_yaxes(title_text="y(t)", row=1, col=2)
-fig_exp5.add_vrect(x0=-2, x1=0, fillcolor="seagreen", opacity=0.05, layer="below", line_width=0, row=1, col=1)
-fig_exp5.add_vrect(x0=0, x1=3, fillcolor="crimson", opacity=0.08, layer="below", line_width=0, row=1, col=1)
-st.plotly_chart(fig_exp5, use_container_width=True)
+    fig_e5.update_xaxes(title_text="σ", range=[-2, 3],
+                        zeroline=True, zerolinecolor="black", row=1, col=1)
+    fig_e5.update_yaxes(title_text="jω", range=[-1.5, 1.5],
+                        zeroline=True, zerolinecolor="black", row=1, col=1)
+    fig_e5.update_xaxes(title_text="t (s)", row=1, col=2)
+    fig_e5.update_yaxes(title_text="y(t)", row=1, col=2)
+    fig_e5.update_layout(height=320, margin=dict(t=30, b=10, l=20, r=10),
+                         template="plotly_white")
+    st.plotly_chart(fig_e5, use_container_width=True)
 
 st.divider()
 
@@ -823,9 +703,8 @@ Com polo em $s = 0$:
 
 $$G(s) = \frac{k}{s} \quad\Rightarrow\quad y(t) = k\,t \quad\text{(rampa)}$$
 
-A saída cresce sem limite mas **não exponencialmente** — sistema **marginalmente estável**
-(polo no eixo imaginário). O integrador é ubíquo em sistemas de controle: motores DC,
-atuadores hidráulicos e servomecanismos possuem um polo na origem.
+A saída cresce sem limite mas **não exponencialmente** — sistema **marginalmente estável**.
+O integrador é ubíquo: motores DC, atuadores hidráulicos e servomecanismos possuem um polo na origem.
 
 ### 6.2 Estabilização por realimentação negativa unitária
 
@@ -845,15 +724,13 @@ Aumentar $k$ afasta o polo da origem e acelera a resposta de malha fechada.
 """)
 
 t_arr6 = np.linspace(0, 10, 600)
-k_vals6=[1, 2, 3, 4, 5, 6]
-colors6=plt.cm.viridis(np.linspace(0.15, 0.88, len(k_vals6)))
+k_vals6=[1,2,3,4,5,6]; colors6=plt.cm.viridis(np.linspace(0.15, 0.88, len(k_vals6)))
 
 fig6a, axes6a = plt.subplots(1, 2, figsize=(9.5, 3.2))
 ax = axes6a[0]
 for kv, col in zip(k_vals6, colors6):
     ax.plot(t_arr6, kv*t_arr6, color=col, label=f"k={kv}")
-ax.set_ylim(0, 28)
-estilo(ax, xlabel="t (s)")
+ax.set_ylim(0, 28); estilo(ax, xlabel="t (s)")
 ax.set_title(r"Malha aberta $G(s)=k/s$ — saída rampa", fontsize=8.5)
 ax.legend(ncol=2, fontsize=7)
 
@@ -874,72 +751,70 @@ ax.plot(0, 0, "x", color="darkorange", ms=14, mew=3, label=r"polo $s=0$")
 ax.set_xlim(-1.5, 1.5); ax.set_ylim(-1, 1)
 ax.set_xlabel(r"$\sigma$", fontsize=8); ax.set_ylabel(r"$j\omega$", fontsize=8)
 ax.set_title(r"Malha aberta $G(s)=k/s$", fontsize=8.5)
-ax.spines[["right", "top"]].set_visible(False); ax.legend(fontsize=7.5)
+ax.spines[["right","top"]].set_visible(False); ax.legend(fontsize=7.5)
 
 ax2 = axes6b[1]
 ax2.axhline(0, color="k", lw=0.8); ax2.axvline(0, color="k", lw=0.8)
-ax2.fill_betweenx([-1, 1], -8, 0, alpha=0.07, color="seagreen")
+ax2.fill_betweenx([-1,1], -8, 0, alpha=0.07, color="seagreen")
 for kv, col in zip(k_vals6, colors6):
     ax2.plot(-kv, 0, "x", color=col, ms=12, mew=2.5, label=f"k={kv}")
 ax2.set_xlim(-8, 1); ax2.set_ylim(-1, 1)
 ax2.set_xlabel(r"$\sigma$", fontsize=8); ax2.set_ylabel(r"$j\omega$", fontsize=8)
-ax2.set_title(r"Malha fechada $H(s)=k/(s+k)$ — polo em $s=-k$", fontsize=8.5)
-ax2.spines[["right", "top"]].set_visible(False); ax2.legend(ncol=2, fontsize=7)
+ax2.set_title(r"Malha fechada — polo em $s=-k$", fontsize=8.5)
+ax2.spines[["right","top"]].set_visible(False); ax2.legend(ncol=2, fontsize=7)
 plt.tight_layout()
 show_fig(fig6b, 0.72)
 
 # ── Explorador interativo seção 6 ─────────────────────────────────────────────
-st.markdown("### 6.3 🎛️ Explorador Interativo — Polo MA vs. Polo MF")
-st.caption("Slider **azul** = $k$ · Laranja × = polo MA (fixo na origem) · Azul × = polo MF (desloca para $s=-k$)")
+st.markdown("### 6.3 🎛️ Explorador — Polo MA vs. Polo MF")
+st.caption("Laranja × = polo MA (fixo na origem) · Azul × = polo MF (desloca para $s=-k$)")
 
-t_s6 = np.linspace(0, 10, 600)
-k_grid6=np.round(np.arange(0.5, 8.1, 0.5), 2)
-K6_DEF=2.0
+c6a, c6b = st.columns([1, 2])
+with c6a:
+    k6 = st.slider("Ganho $k$", 0.5, 8.0, 2.0, 0.1, key="k6")
+    st.info(f"Polo MA: $s=0$  →  Polo MF: $s={-k6:.2f}$\n\n$\\tau={1/k6:.2f}$ s · $T_s={4/k6:.2f}$ s · $y(\\infty)=1$")
 
-fig_exp6=make_subplots(rows=1, cols=2,
-    subplot_titles=("Plano s: MA (laranja) vs MF (azul)", "Resposta ao degrau MF"))
+with c6b:
+    t_e6 = np.linspace(0, 10, 600)
+    y_e6 = 1.0 * (1 - np.exp(-k6 * t_e6))
 
-for kv in k_grid6:
-    y_mf=1.0*(1-np.exp(-kv*t_s6))
-    vis=(abs(kv-K6_DEF)<1e-9)
-    fig_exp6.add_trace(go.Scatter(x=[0], y=[0], mode="markers",
-        marker=dict(symbol="x", size=14, color="darkorange", line=dict(width=3, color="darkorange")),
-        visible=vis, showlegend=False,
-        hovertemplate="polo MA: s=0<extra></extra>"), row=1, col=1)
-    fig_exp6.add_trace(go.Scatter(x=[-kv], y=[0], mode="markers",
-        marker=dict(symbol="x", size=14, color="#1f77b4", line=dict(width=3, color="#1f77b4")),
-        visible=vis, showlegend=False,
-        hovertemplate=f"polo MF: s={-kv:.2f}<extra>k={kv}</extra>"), row=1, col=1)
-    fig_exp6.add_trace(go.Scatter(x=[0, -kv], y=[0, 0], mode="lines",
+    fig_e6 = make_subplots(rows=1, cols=2,
+                           subplot_titles=("Plano s: MA (laranja) vs MF (azul)",
+                                           "Resposta ao degrau — Malha Fechada"))
+    fig_e6.add_vrect(x0=-9, x1=0, fillcolor="seagreen", opacity=0.06,
+                     layer="below", line_width=0, row=1, col=1)
+    # polo MA — laranja, fixo na origem
+    fig_e6.add_trace(go.Scatter(x=[0], y=[0], mode="markers",
+        marker=dict(symbol="x", size=14, color="darkorange",
+                    line=dict(width=3, color="darkorange")),
+        name="Polo MA (s=0)", showlegend=True), row=1, col=1)
+    # polo MF — azul, desloca com k
+    fig_e6.add_trace(go.Scatter(x=[-k6], y=[0], mode="markers",
+        marker=dict(symbol="x", size=14, color="#1f77b4",
+                    line=dict(width=3, color="#1f77b4")),
+        name=f"Polo MF (s={-k6:.2f})", showlegend=True), row=1, col=1)
+    # linha pontilhada entre os dois polos
+    fig_e6.add_trace(go.Scatter(x=[0, -k6], y=[0, 0], mode="lines",
         line=dict(color="gray", width=1.2, dash="dot"),
-        visible=vis, showlegend=False, hoverinfo="skip"), row=1, col=1)
-    fig_exp6.add_trace(go.Scatter(x=t_s6, y=y_mf, mode="lines",
-        line=dict(color="#1f77b4", width=2.2),
-        visible=vis, showlegend=False,
-        hovertemplate=f"k={kv}<br>t=%{{x:.2f}}s y=%{{y:.3f}}<extra></extra>"), row=1, col=2)
+        showlegend=False, hoverinfo="skip"), row=1, col=1)
+    # resposta MF
+    fig_e6.add_trace(go.Scatter(x=t_e6, y=y_e6, mode="lines",
+        line=dict(color="#1f77b4", width=2.5),
+        name="y(t) MF", showlegend=False), row=1, col=2)
+    fig_e6.add_hline(y=1.0, line_dash="dash", line_color="gray",
+                     annotation_text="y(∞)=1", annotation_position="top right",
+                     row=1, col=2)
 
-def vis6_fn(i): v=[False]*(4*len(k_grid6)); [v.__setitem__(4*i+d, True) for d in range(4)]; return v
-
-steps6=[dict(method="update", label=str(kv),
-    args=[{"visible": vis6_fn(i)},
-          {"title": f"k={kv} | Polo MA: s=0 → Polo MF: s={-kv:.2f} | tau={1/kv:.2f}s Ts={4/kv:.2f}s"}])
-    for i, kv in enumerate(k_grid6)]
-
-fig_exp6.update_layout(
-    title=dict(text=f"k={K6_DEF} — Polo MA: s=0  →  Polo MF: s={-K6_DEF:.2f}  |  τ={1/K6_DEF:.2f}s  Ts={4/K6_DEF:.2f}s", font=dict(size=12)),
-    height=420, margin=dict(l=60, r=20, t=60, b=90), template="plotly_white",
-    sliders=[dict(active=idx_def(k_grid6, K6_DEF),
-                  currentvalue=dict(prefix="k = ", font=dict(size=13, color="#1f77b4"), xanchor="left"),
-                  pad=dict(t=10, b=0), x=0.0, y=0.04, len=1.0,
-                  steps=steps6, tickcolor="#1f77b4")]
-)
-fig_exp6.update_xaxes(title_text="σ", range=[-9, 1.5], zeroline=True, zerolinecolor="black", row=1, col=1)
-fig_exp6.update_yaxes(title_text="jω", range=[-1.2, 1.2], zeroline=True, zerolinecolor="black", row=1, col=1)
-fig_exp6.update_xaxes(title_text="t (s)", row=1, col=2)
-fig_exp6.update_yaxes(title_text="y(t)", range=[-0.05, 1.15], row=1, col=2)
-fig_exp6.add_vrect(x0=-9, x1=0, fillcolor="seagreen", opacity=0.06, layer="below", line_width=0, row=1, col=1)
-fig_exp6.add_hline(y=1.0, line_width=0.8, line_dash="dash", line_color="gray", row=1, col=2)
-st.plotly_chart(fig_exp6, use_container_width=True)
+    fig_e6.update_xaxes(title_text="σ", range=[-9, 1.5],
+                        zeroline=True, zerolinecolor="black", row=1, col=1)
+    fig_e6.update_yaxes(title_text="jω", range=[-1.2, 1.2],
+                        zeroline=True, zerolinecolor="black", row=1, col=1)
+    fig_e6.update_xaxes(title_text="t (s)", row=1, col=2)
+    fig_e6.update_yaxes(title_text="y(t)", range=[-0.05, 1.15], row=1, col=2)
+    fig_e6.update_layout(height=320, margin=dict(t=30, b=10, l=20, r=10),
+                         template="plotly_white",
+                         legend=dict(orientation="h", y=1.12))
+    st.plotly_chart(fig_e6, use_container_width=True)
 
 st.divider()
 
