@@ -152,7 +152,8 @@ def make_plane_trace(polos_x, polos_y, zeros_x=None, zeros_y=None,
 # ═══════════════════════════════════════════════════════════════════════════════
 # CABEÇALHO
 # ═══════════════════════════════════════════════════════════════════════════════
-st.title("📈 Dinâmica no Domínio do Tempo — Sistemas de Ordem 1")
+st.title("📈 Dinâmica no Domínio do Tempo")
+st.subheader("Sistemas de Ordem 1")
 st.caption("Modelagem e Sistemas Lineares · Engenharia de Energia · IFRN-CNAT · Marcus V A Fernandes")
 st.markdown("---")
 
