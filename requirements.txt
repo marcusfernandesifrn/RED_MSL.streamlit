@@ -5,3 +5,4 @@ plotly>=5.18
 pandas>=2.0
 matplotlib>=3.7.0
 scipy>=1.11.0
+sympy>=1.12
