@@ -20,7 +20,7 @@ from sympy import (symbols, oo, exp, cos, sin, sqrt, latex,
 # ── Configuração da Página ────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Transformada de Laplace",
-    page_icon="∫",
+    page_icon="🌀",
     layout="wide",
 )
 
@@ -137,7 +137,7 @@ def show_fig(fig, width_frac=0.65):
 # ═══════════════════════════════════════════════════════════════════════════════
 # CABEÇALHO
 # ═══════════════════════════════════════════════════════════════════════════════
-st.title("∫ Transformada de Laplace")
+st.title("🌀 Transformada de Laplace")
 st.caption("Modelagem e Sistemas Lineares · Engenharia de Energia · IFRN-CNAT · Marcus V A Fernandes")
 st.markdown("---")
 
@@ -892,10 +892,9 @@ st.markdown(r"""
 Para pequenas variações $\delta x = x - x_0$ em torno do **ponto de equilíbrio** $x_0$,
 a série de Taylor truncada na 1ª ordem fornece:
 
-$$f(x) \approx f(x_0) + \underbrace{\left.\frac{df}{dx}\right|_{x_0}}_{m_a}\,(x - x_0)
-\qquad\Rightarrow\qquad \delta f \approx m_a\,\delta x$$
+$$f(x) \approx f(x_0) + \left.\frac{df}{dx}\right|_{x_0}\,(x - x_0) \qquad\Rightarrow\qquad \delta f \approx m_a\,\delta x$$
 
-O coeficiente $m_a$ é o **ganho linearizado** (inclinação local). Ordens superiores ampliam
+onde $m_a = \left.\dfrac{df}{dx}\right|_{x_0}$ é o **ganho linearizado** (inclinação local). Ordens superiores ampliam
 a faixa de validade, conforme mostrado abaixo para $f(x) = \sqrt{x}$, $x_0 = 4$.
 """)
 
@@ -974,12 +973,11 @@ onde $y_{en}(t)$ é a componente de **entrada nula** (condições iniciais) e $y
 
 Para funções impróprias: $F(s) = Q(s) + R(s)/D(s)$, onde $Q(s)$ corresponde a impulsos no tempo:
 
-$$\mathcal{L}^{-1}[1] = \delta(t), \quad \mathcal{L}^{-1}[s] = \dot{\delta}(t),
-\quad \mathcal{L}^{-1}[s^k] = \delta^{(k)}(t)$$
+$$\mathcal{L}^{-1}[1] = \delta(t), \quad \mathcal{L}^{-1}[s] = \dot{\delta}(t), \quad \mathcal{L}^{-1}[s^k] = \delta^{(k)}(t)$$
 
 **Exemplo:** $F(s) = \dfrac{s^3+2s^2+6s+7}{s^2+s+5}$
 
-Divisão: $F(s) = \underbrace{(s+1)}_{Q(s)} + \underbrace{\dfrac{2}{s^2+s+5}}_{R(s)/D(s)}$
+Divisão: $F(s) = (s+1) + \dfrac{2}{s^2+s+5}$, onde $(s+1) = Q(s)$ e $\dfrac{2}{s^2+s+5} = R(s)/D(s)$.
 """)
 
 t_r9 = np.linspace(0, 6, 1000)
@@ -1074,8 +1072,7 @@ st.header("11. Frações Parciais — Raízes Complexas Conjugadas")
 st.markdown(r"""
 Quando $D(s)$ contém o fator irredutível $s^2 + as + b$ com $a^2 < 4b$, as raízes são complexas:
 
-$$p_{1,2} = -\sigma \pm j\omega_d, \qquad \sigma = \frac{a}{2} > 0,
-\qquad \omega_d = \frac{\sqrt{4b-a^2}}{2} > 0$$
+$$p_{1,2} = -\sigma \pm j\omega_d, \qquad \sigma = \frac{a}{2} > 0, \qquad \omega_d = \frac{\sqrt{4b-a^2}}{2} > 0$$
 
 **Passo 1 — forma expandida** (resíduos sempre conjugados $k$, $\bar{k}$):
 
@@ -1083,9 +1080,7 @@ $$k = \Bigl[(s+\sigma-j\omega_d)\,F(s)\Bigr]_{s=-\sigma+j\omega_d}$$
 
 **Passo 2 — forma direta** (recomendada — evita aritmética complexa):
 
-$$\frac{A(s+\sigma) + B\omega_d}{(s+\sigma)^2+\omega_d^2}
-\;\xrightarrow{\mathcal{L}^{-1}}\;
-e^{-\sigma t}\bigl(A\cos\omega_d t + B\sin\omega_d t\bigr)\,u(t)$$
+$$\frac{A(s+\sigma) + B\omega_d}{(s+\sigma)^2+\omega_d^2} \;\xrightarrow{\mathcal{L}^{-1}}\; e^{-\sigma t}\bigl(A\cos\omega_d t + B\sin\omega_d t\bigr)\,u(t)$$
 
 ---
 
@@ -1103,8 +1098,7 @@ Mesmos pólos. Decompor numerador: $2s+6 = A(s+1)+B\cdot2 \Rightarrow A=2,\; B=2
 
 $$F_5(s) = 2\cdot\frac{s+1}{(s+1)^2+4} + 2\cdot\frac{2}{(s+1)^2+4}$$
 
-$$\boxed{f_5(t) = 2\,e^{-t}\cos(2t)\,u(t) + 2\,e^{-t}\sin(2t)\,u(t)
-= 2\sqrt{2}\,e^{-t}\cos\!\left(2t-\tfrac{\pi}{4}\right)u(t)}$$
+$$\boxed{f_5(t) = 2\,e^{-t}\cos(2t)\,u(t) + 2\,e^{-t}\sin(2t)\,u(t) = 2\sqrt{2}\,e^{-t}\cos\!\left(2t-\tfrac{\pi}{4}\right)u(t)}$$
 """)
 
 t_fc = np.linspace(0, 6, 600)
@@ -1155,8 +1149,7 @@ $$k_i = \frac{1}{(i-1)!}\left.\frac{d^{\,i-1}\,G(s)}{ds^{\,i-1}}\right|_{s=-p_1}
 
 **Transformada inversa** de cada termo:
 
-$$\mathcal{L}^{-1}\!\left[\frac{k_i}{(s+p_1)^{r-i+1}}\right] =
-k_i\,\frac{t^{r-i}}{(r-i)!}\,e^{-p_1 t}\,u(t)$$
+$$\mathcal{L}^{-1}\!\left[\frac{k_i}{(s+p_1)^{r-i+1}}\right] = k_i\,\frac{t^{r-i}}{(r-i)!}\,e^{-p_1 t}\,u(t)$$
 
 > O bloco repetido gera termos do tipo $t^m e^{-p_1 t}$: mesmo com $p_1 > 0$, o sinal cresce
 > inicialmente antes de decair.
