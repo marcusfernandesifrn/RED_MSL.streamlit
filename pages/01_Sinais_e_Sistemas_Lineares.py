@@ -491,8 +491,9 @@ show_fig(fig_desl, 0.40)
 
 st.markdown("### 4.2 Escalamento Temporal")
 st.markdown(r"""
-$$\phi(t) = x(at),\; a>1 \Rightarrow \text{compressão} \qquad
-\phi(t) = x\!\left(\tfrac{t}{a}\right),\; a>1 \Rightarrow \text{expansão}$$
+$$\phi(t) = x(at),\quad a>1 \quad\Rightarrow\quad \text{compressão (mais rápido)}$$
+
+$$\phi(t) = x\!\left(\tfrac{t}{a}\right),\quad a>1 \quad\Rightarrow\quad \text{expansão (mais lento)}$$
 """)
 
 def tri(x, s1, s2):
