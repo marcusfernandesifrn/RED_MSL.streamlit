@@ -20,7 +20,7 @@ from sympy import (symbols, oo, exp, cos, sin, sqrt, latex,
 # ── Configuração da Página ────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Transformada de Laplace",
-    page_icon="📡",
+    page_icon="∫",
     layout="wide",
 )
 
@@ -137,7 +137,7 @@ def show_fig(fig, width_frac=0.65):
 # ═══════════════════════════════════════════════════════════════════════════════
 # CABEÇALHO
 # ═══════════════════════════════════════════════════════════════════════════════
-st.title("📡 Transformada de Laplace")
+st.title("∫ Transformada de Laplace")
 st.caption("Modelagem e Sistemas Lineares · Engenharia de Energia · IFRN-CNAT · Marcus V A Fernandes")
 st.markdown("---")
 
@@ -403,8 +403,7 @@ $$H(s) = \frac{Y(s)}{X(s)} = \mathcal{L}[h(t)]$$
 
 ### 5.1 Forma Geral — Pólos e Zeros
 
-$$H(s) = \frac{N(s)}{D(s)} = \frac{b_m s^m + b_{m-1}s^{m-1} + \cdots + b_0}
-{a_n s^n + a_{n-1}s^{n-1} + \cdots + a_0}, \qquad m \leq n$$
+$$H(s) = \frac{N(s)}{D(s)} = \frac{b_m s^m + b_{m-1}s^{m-1} + \cdots + b_0}{a_n s^n + a_{n-1}s^{n-1} + \cdots + a_0}, \qquad m \leq n$$
 
 - **Pólos:** raízes de $D(s)$ — valores de $s$ onde $H(s) \to \infty$
 - **Zeros:** raízes de $N(s)$ — valores de $s$ onde $H(s) = 0$
@@ -506,8 +505,9 @@ onde $n$ é a ordem de $H(s)$.
 
 Separa $H(s)$ em dois blocos em cascata — $H_1$ trata apenas o denominador e $H_2$ apenas o numerador:
 
-$$H(s) = \underbrace{\frac{1}{s^n + a_{n-1}s^{n-1}+\cdots+a_0}}_{H_1(s)} \cdot
-\underbrace{\bigl(b_m s^m+\cdots+b_0\bigr)}_{H_2(s)}$$
+$$H(s) = \frac{1}{s^n + a_{n-1}s^{n-1}+\cdots+a_0} \cdot \bigl(b_m s^m+\cdots+b_0\bigr) = H_1(s) \cdot H_2(s)$$
+
+onde $H_1(s) = \dfrac{1}{D(s)}$ realiza o denominador e $H_2(s) = N(s)$ realiza o numerador.
 
 ### 7.2 Realização em Cascata
 
@@ -531,8 +531,7 @@ $$H(s) = \frac{k_1}{s-\lambda_1}+\frac{k_2}{s-\lambda_2}+\cdots+\frac{k_n}{s-\la
 
 Um atraso puro $\theta$ não é racional em $s$: $e^{-\theta s}$. A **aproximação de Padé** de 2ª ordem:
 
-$$e^{-\theta s} \approx \frac{1 - \frac{\theta}{2}s + \frac{\theta^2}{8}s^2}
-{1 + \frac{\theta}{2}s + \frac{\theta^2}{8}s^2}$$
+$$e^{-\theta s} \approx \frac{1 - \frac{\theta}{2}s + \frac{\theta^2}{8}s^2}{1 + \frac{\theta}{2}s + \frac{\theta^2}{8}s^2}$$
 
 ### 7.5 Exemplo Numérico
 
@@ -735,25 +734,30 @@ st.markdown("### 8.2 Não-linearidades de frequência — fenômenos dinâmicos"
 
 @st.cache_data(show_spinner="Calculando fenômenos dinâmicos…")
 def calc_freq_nonlin():
+    # ── 1. Caos — Atrator de Lorenz ──────────────────────────────────────────
     def lorenz(t, y, sig=10, r=28, b=8/3):
         x, yd, z = y
         return [sig*(yd-x), x*(r-z)-yd, x*yd-b*z]
     sol_l = solve_ivp(lorenz, [0, 40], [1, 1, 1],
                       dense_output=True, rtol=1e-8, atol=1e-10)
     t_l = np.linspace(0, 40, 8000)
-    xyz = sol_l.sol(t_l)
+    xyz = sol_l.sol(t_l)          # (3, N) numpy array
 
+    # ── 2. Batimento ──────────────────────────────────────────────────────────
     t_b = np.linspace(0, 6*np.pi, 3000)
     w1, w2 = 10.0, 10.8
     y_bat = np.sin(w1*t_b) + np.sin(w2*t_b)
     env_b = 2*np.abs(np.cos((w2-w1)/2*t_b))
 
+    # ── 3. Arrasto ────────────────────────────────────────────────────────────
     def arrasto(t, y, c=0.5):
         x, xd = y
         return [xd, np.sin(t) - c*np.abs(xd)*xd - x]
     t_drag = np.linspace(0, 60, 6000)
     sol_d = solve_ivp(arrasto, [0, 60], [0, 0], t_eval=t_drag, rtol=1e-7)
+    y_arrasto = sol_d.y[0]        # extrair array
 
+    # ── 4. Duffing ────────────────────────────────────────────────────────────
     def duffing(t, y, gam=0.15, eps=0.3, F=0.5, Om=1.0):
         x, xd = y
         return [xd, F*np.cos(Om*t) - gam*xd - x - eps*x**3]
@@ -764,37 +768,56 @@ def calc_freq_nonlin():
         s_ = solve_ivp(duffing, [0, 200], x0d, args=(0.15,0.3,0.5,Om),
                        dense_output=True, rtol=1e-7)
         t_ss = np.linspace(180, 200, 800)
-        amps_up.append(np.max(np.abs(s_.sol(t_ss)[0])))
+        amps_up.append(float(np.max(np.abs(s_.sol(t_ss)[0]))))
         x0d = list(s_.sol(200))
     x0d = [2.0, 0.0]
     for Om in omegas[::-1]:
         s_ = solve_ivp(duffing, [0, 200], x0d, args=(0.15,0.3,0.5,Om),
                        dense_output=True, rtol=1e-7)
         t_ss = np.linspace(180, 200, 800)
-        amps_dn.insert(0, np.max(np.abs(s_.sol(t_ss)[0])))
+        amps_dn.insert(0, float(np.max(np.abs(s_.sol(t_ss)[0]))))
         x0d = list(s_.sol(200))
+    amps_up = np.array(amps_up)
+    amps_dn = np.array(amps_dn)
 
+    # ── 5. Van der Pol ────────────────────────────────────────────────────────
     def vdp(t, y, mu=1.0):
         x, xd = y
         return [xd, mu*(1 - x**2)*xd - x]
     sol_v = solve_ivp(vdp, [0, 40], [0.1, 0],
                       t_eval=np.linspace(0, 40, 4000), rtol=1e-7)
+    vdp_x  = sol_v.y[0]          # extrair arrays
+    vdp_xd = sol_v.y[1]
 
+    # ── 6. Folga (backlash) ───────────────────────────────────────────────────
     t_f = np.linspace(0, 4*np.pi, 2000)
     u_f = np.sin(t_f); bl = 0.4; y_f = np.zeros_like(u_f)
     for j in range(1, len(u_f)):
         if u_f[j] - u_f[j-1] > 0: y_f[j] = max(y_f[j-1], u_f[j] - bl)
         else:                        y_f[j] = min(y_f[j-1], u_f[j] + bl)
 
+    # ── 7. Ressonância — calcular aqui dentro ─────────────────────────────────
     freqs = np.linspace(0.05, 3.0, 1000)
-    def H_mag(w, zeta=0.1, wn=1.0):
-        return 1.0 / np.sqrt((1-(w/wn)**2)**2 + (2*zeta*(w/wn))**2)
+    zetas = [0.05, 0.15, 0.50, 1.0]
+    H_mags = np.array([
+        1.0 / np.sqrt((1 - freqs**2)**2 + (2*z*freqs)**2)
+        for z in zetas
+    ])  # shape (4, 1000)
 
-    return (xyz, t_l, t_b, y_bat, env_b, sol_d, t_drag,
-            omegas, amps_up, amps_dn, sol_v, t_f, u_f, y_f, bl, freqs, H_mag)
+    # Retornar APENAS numpy arrays e escalares primitivos
+    return (xyz, t_l, t_b, y_bat, env_b,
+            t_drag, y_arrasto,
+            omegas, amps_up, amps_dn,
+            vdp_x, vdp_xd,
+            t_f, u_f, y_f, bl,
+            freqs, H_mags)
 
-(xyz, t_l, t_b, y_bat, env_b, sol_d, t_drag,
- omegas, amps_up, amps_dn, sol_v, t_f, u_f, y_f, bl, freqs, H_mag) = calc_freq_nonlin()
+(xyz, t_l, t_b, y_bat, env_b,
+ t_drag, y_arrasto,
+ omegas, amps_up, amps_dn,
+ vdp_x, vdp_xd,
+ t_f, u_f, y_f, bl,
+ freqs, H_mags) = calc_freq_nonlin()
 
 fig_freq, axs_freq = plt.subplots(4, 2, figsize=(10.5, 12))
 fig_freq.suptitle("Não-linearidades de frequência — fenômenos dinâmicos",
@@ -818,7 +841,7 @@ ax.set_xlabel("t (s)", fontsize=7); ax.set_ylabel("Amplitude", fontsize=7)
 ax.legend(fontsize=6); ax.spines[["right", "top"]].set_visible(False)
 
 ax = axs_freq[1, 0]
-ax.plot(sol_d.t[-3000:], sol_d.y[0, -3000:], lw=1.2, color=COR["natural"])
+ax.plot(t_drag[-3000:], y_arrasto[-3000:], lw=1.2, color=COR["natural"])
 ax.set_title(r"Arrasto — $\ddot{x}+c|\dot{x}|\dot{x}+x=\sin t$, $c=0{,}5$",
              fontsize=8, fontweight="bold")
 ax.set_xlabel("t (s)", fontsize=7); ax.set_ylabel("x(t)", fontsize=7)
@@ -834,7 +857,7 @@ ax.set_xlabel(r"$\Omega$", fontsize=7); ax.set_ylabel("Amplitude estacionária",
 ax.legend(fontsize=6); ax.spines[["right", "top"]].set_visible(False)
 
 ax = axs_freq[2, 0]
-ax.plot(sol_v.y[0], sol_v.y[1], lw=1, color=COR["marginal"])
+ax.plot(vdp_x, vdp_xd, lw=1, color=COR["marginal"])
 ax.set_title(r"Ciclo Limite — Van der Pol ($\mu=1$)""\n"
              r"$\ddot{x}-\mu(1-x^2)\dot{x}+x=0$", fontsize=8, fontweight="bold")
 ax.set_xlabel("x", fontsize=7); ax.set_ylabel(r"$\dot{x}$", fontsize=7)
@@ -850,8 +873,9 @@ ax.legend(fontsize=6); ax.spines[["right", "top"]].set_visible(False)
 
 ax = axs_freq[3, 0]
 cores_res = [COR["saida"], COR["marginal"], COR["natural"], COR["sinal"]]
-for zeta, cor in zip([0.05, 0.15, 0.50, 1.0], cores_res):
-    ax.plot(freqs, H_mag(freqs, zeta), lw=1.6, label=rf"$\zeta={zeta}$", color=cor)
+zetas_res = [0.05, 0.15, 0.50, 1.0]
+for i, (zeta, cor) in enumerate(zip(zetas_res, cores_res)):
+    ax.plot(freqs, H_mags[i], lw=1.6, label=rf"$\zeta={zeta}$", color=cor)
 ax.axvline(1, color="k", ls=":", lw=0.8, label=r"$\omega_n$")
 ax.set_title(r"Ressonância — $|H(j\omega)|$ vs. frequência", fontsize=8, fontweight="bold")
 ax.set_xlabel(r"$\omega/\omega_n$", fontsize=7); ax.set_ylabel("|H|", fontsize=7)
@@ -931,8 +955,9 @@ st.header("9. Resposta no Domínio do Tempo")
 st.markdown(r"""
 A propriedade de derivação (§3) transforma a EDO em equação algébrica em $s$. A resposta total é:
 
-$$y(t) = \underbrace{y_{en}(t)}_{\substack{\text{entrada nula} \\ \text{(condições iniciais)}}}
-+ \underbrace{y_{ez}(t)}_{\substack{\text{estado nulo} \\ \text{(entrada aplicada)}}}$$
+$$y(t) = y_{en}(t) + y_{ez}(t)$$
+
+onde $y_{en}(t)$ é a componente de **entrada nula** (condições iniciais) e $y_{ez}(t)$ é a de **estado nulo** (entrada aplicada).
 
 ### 9.1 Procedimento
 
@@ -1120,14 +1145,13 @@ st.header("12. Frações Parciais — Raízes Reais Repetidas")
 st.markdown(r"""
 Quando $D(s)$ contém o fator $(s+p_1)^r$ (raiz $-p_1$ com multiplicidade $r$):
 
-$$F(s) = \underbrace{\frac{k_1}{(s+p_1)^r} + \frac{k_2}{(s+p_1)^{r-1}} + \cdots +
-\frac{k_r}{s+p_1}}_{\text{bloco repetido}}
-+ \underbrace{\frac{k_{r+1}}{s+p_2} + \cdots}_{\text{pólos simples}}$$
+$$F(s) = \frac{k_1}{(s+p_1)^r} + \frac{k_2}{(s+p_1)^{r-1}} + \cdots + \frac{k_r}{s+p_1} + \frac{k_{r+1}}{s+p_2} + \cdots$$
+
+onde os primeiros $r$ termos formam o **bloco repetido** e os demais são **pólos simples**.
 
 **Cálculo dos resíduos** — define-se $G(s) = F(s)\cdot(s+p_1)^r$:
 
-$$k_i = \frac{1}{(i-1)!}\left.\frac{d^{\,i-1}\,G(s)}{ds^{\,i-1}}\right|_{s=-p_1},
-\quad i = 1, 2, \ldots, r$$
+$$k_i = \frac{1}{(i-1)!}\left.\frac{d^{\,i-1}\,G(s)}{ds^{\,i-1}}\right|_{s=-p_1}, \quad i = 1, 2, \ldots, r$$
 
 **Transformada inversa** de cada termo:
 
