@@ -66,18 +66,60 @@ def bloco(ax, x, y, w, h, txt, fc=None, ec=None, fs=8):
 def ponto(ax, x, y):
     ax.plot(x, y, "o", color=COR["bloco_e"], ms=4, zorder=5)
 
-# ── Helper de exibição: centraliza figura em coluna proporcional ──────────────
+# ── CSS responsivo — injetado uma única vez ───────────────────────────────────
+# No desktop (>768 px) cada figura fica centralizada com largura controlada.
+# Em telas estreitas (≤768 px, mobile/vertical) a figura ocupa 100% da tela.
+st.markdown("""
+<style>
+/* Wrapper responsivo para figuras matplotlib */
+.fig-wrap {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+.fig-wrap > div {
+    width: 100%;          /* mobile-first: 100 % */
+}
+
+/* Desktop: limitar pela variável --fw definida inline no elemento */
+@media (min-width: 769px) {
+    .fig-wrap > div {
+        width: var(--fw, 65%);
+        max-width: var(--fw, 65%);
+    }
+}
+
+/* Garantir que a imagem dentro do st.pyplot preencha o wrapper */
+.fig-wrap img,
+.fig-wrap [data-testid="stImage"] img {
+    width: 100% !important;
+    height: auto !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ── Helper de exibição responsivo ────────────────────────────────────────────
 def show_fig(fig, width_frac=0.65):
     """
-    Renderiza `fig` centrado na tela, ocupando `width_frac` da largura total.
-    width_frac: 0.0–1.0  (0.5 = metade, 0.75 = três quartos, etc.)
-    Usa três colunas [margin, content, margin] com proporções calculadas.
+    Renderiza `fig` de forma responsiva:
+      • Desktop (>768 px): figura centralizada com largura = width_frac × 100 %
+      • Mobile  (≤768 px): figura expande para 100 % da tela automaticamente
+    width_frac: 0.0–1.0
     """
-    side = (1.0 - width_frac) / 2
-    _, col_c, _ = st.columns([side, width_frac, side])
-    with col_c:
-        st.pyplot(fig, use_container_width=True)
+    import io, base64
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", bbox_inches="tight", dpi=fig.get_dpi())
     plt.close(fig)
+    buf.seek(0)
+    b64 = base64.b64encode(buf.read()).decode()
+    pct = f"{int(width_frac * 100)}%"
+    st.markdown(
+        f'<div class="fig-wrap">'
+        f'<div style="--fw:{pct}">'
+        f'<img src="data:image/png;base64,{b64}" style="width:100%;height:auto;display:block;"/>'
+        f'</div></div>',
+        unsafe_allow_html=True,
+    )
 
 # ── Helpers de álgebra de blocos ──────────────────────────────────────────────
 def _blk(ax, x, y, w, h, t, fs=8):
