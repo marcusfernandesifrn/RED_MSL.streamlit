@@ -126,7 +126,7 @@ def plotly_bode(w, mags, fases, labels, titulo, colors=None, show_asint=None):
 # CABEÇALHO
 # ═══════════════════════════════════════════════════════════════════════════════
 st.title("📉 Resposta em Frequência de Sistemas")
-st.subheader("Diagramas de Bode, Nichols, Filtros e Explorador (Parte 1 de 2)")
+st.subheader("Diagramas de Bode")
 st.caption("Modelagem e Sistemas Lineares · Engenharia de Energia · IFRN-CNAT · Marcus V A Fernandes")
 st.markdown("---")
 
@@ -197,7 +197,7 @@ onde $H(j\omega) = H(s)\big|_{s=j\omega}$ é a **função de transferência no e
 
 | Indicador | Definição | Unidade |
 |---|---|---|
-| **Magnitude** $|H(j\omega)|$ | Razão amplitude saída/entrada | adimensional (ou dB) |
+| **Magnitude** $\|H(j\omega)\|$ | Razão amplitude saída/entrada | adimensional (ou dB) |
 | **Fase** $\angle H(j\omega)$ | Diferença de fase saída − entrada | graus ou radianos |
 
 > Esses indicadores descrevem **exclusivamente** a resposta senoidal em **regime permanente** — não o transitório.
@@ -729,7 +729,9 @@ st.divider()
 st.header("5. Diagramas de Bode — Sistemas de 1ª Ordem")
 
 st.markdown(r"""
-$$G(s) = \frac{k}{s + a} = \underbrace{\frac{k}{a}}_{\text{ganho DC}} \cdot \frac{1}{1 + s/a}$$
+$$G(s) = \frac{k}{s + a} = \frac{k/a}{1 + s/a}$$
+
+onde $k/a$ é o **ganho DC** e $1/a$ é a **constante de tempo** $\tau$.
 
 Avaliada em $s = j\omega$:
 
@@ -750,7 +752,7 @@ w5 = np.logspace(-2, 3, 2000)
 fig5a, ax5a = bode_fig(
     [([k],[1,1.0]) for k in [0.5,1,2,4]],
     [f"k={k}" for k in [0.5,1,2,4]],
-    title=r"Bode — $G(s)=k/(s+1)$ — variação de $k$")
+    titulo=r"Bode — $G(s)=k/(s+1)$ — variação de $k$")
 ax5a[0].axvline(1.0, color="k", ls="--", lw=0.9, alpha=0.5)
 ax5a[0].text(1.1, ax5a[0].get_ylim()[0]+2, "ωc=1 rad/s", fontsize=7.5, color="k", alpha=0.7)
 show_fig(fig5a, 0.75)
@@ -760,7 +762,7 @@ fig5b, ax5b = bode_fig(
     [([1.0],[1,a]) for a in [0.5,1,2,4]],
     [f"a={a}" for a in [0.5,1,2,4]],
     colors=plt.cm.tab10(np.linspace(0,0.8,4)),
-    title=r"Bode — $G(s)=1/(s+a)$ — variação de $a$")
+    titulo=r"Bode — $G(s)=1/(s+a)$ — variação de $a$")
 for i, a in enumerate([0.5,1,2,4]):
     ax5b[0].axvline(a, color=plt.cm.tab10(i/4), ls=":", lw=1.0, alpha=0.6)
 show_fig(fig5b, 0.75)
