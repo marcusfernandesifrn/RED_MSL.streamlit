@@ -163,7 +163,7 @@ PHASE_COLORS={-90:"#ff7f0e",-180:"#d62728",-270:"#9467bd",-360:"#8c564b"}
 # CABEÇALHO
 # ═══════════════════════════════════════════════════════════════════════════════
 st.title("🔁 Critério de Nyquist")
-st.subheader("Diagramas de Nyquist — Estabilidade, Margens e LGR (Parte 2 de 2)")
+st.subheader("Diagramas de Nyquist")
 st.caption("Modelagem e Sistemas Lineares · Engenharia de Energia · IFRN-CNAT · Marcus V A Fernandes")
 st.markdown("---")
 
