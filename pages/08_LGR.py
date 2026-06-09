@@ -389,7 +389,7 @@ O sinal negativo indica que a perturbação empurra a saída **acima** da refer�
 
 | Estratégia | Mecanismo | Limitação |
 |---|---|---|
-| Aumentar $k$ | $|e_{rp,D}| = 1/(a+k) \to 0$ | Reduz margem de estabilidade |
+| Aumentar $k$ | $\|e_{rp,D}\| = 1/(a+k) \to 0$ | Reduz margem de estabilidade |
 | Integrador em $C(s)$ | Erro nulo à perturbação degrau (tipo 1) | Pode reduzir margem de fase |
 | Realimentação de estado | Rejeição ativa com polos arbitrários | Requer observador ou sensores adicionais |
 
