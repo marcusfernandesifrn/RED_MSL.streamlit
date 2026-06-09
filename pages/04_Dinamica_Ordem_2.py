@@ -764,44 +764,95 @@ st.caption("× preto = polos dominantes (fixos) · × vermelho = polo adicional 
 
 c7a, c7b = st.columns([1, 2])
 with c7a:
-    a7 = st.slider("Polo adicional $a$", 0.3, 10.0, 2.0, 0.1, key="a7")
-    b7 = st.slider("Zero adicional $b$", -6.0, 10.0, 4.0, 0.25, key="b7")
-    st.info(f"polo dominante: $s={-xi_v7*wn_v7:.2f}\\pm{wn_v7*np.sqrt(1-xi_v7**2):.2f}j$\n\n"
-            f"polo adicional: $s={-a7:.2f}$\n\nzero adicional: $s={-b7:.2f}$")
+    usa_polo7 = st.toggle("🔴 Ativar polo adicional", value=True,  key="uso_polo7")
+    usa_zero7 = st.toggle("🔵 Ativar zero adicional", value=False, key="uso_zero7")
+    st.markdown("---")
+    a7 = st.slider("Polo adicional $a$",  0.3, 10.0,  2.0, 0.1,  key="a7",
+                   disabled=not usa_polo7)
+    b7 = st.slider("Zero adicional $b$", -6.0, 10.0,  4.0, 0.25, key="b7",
+                   disabled=not usa_zero7)
+    st.markdown("---")
+    # resumo de H(s) ativa
+    num_str = f"$k\\omega_n^2" + ("(s+b)" if usa_zero7 else "") + "$"
+    den_str = ("$(s^2+2\\xi\\omega_n s+\\omega_n^2)" +
+               ("(s+a)$" if usa_polo7 else "$"))
+    st.info(f"**$H(s)$ ativa:** {num_str} / {den_str}\n\n"
+            f"polos dom.: $s={-xi_v7*wn_v7:.2f}\\pm{wn_v7*np.sqrt(1-xi_v7**2):.2f}j$\n\n" +
+            (f"polo adicional: $s={-a7:.2f}$\n\n" if usa_polo7 else "") +
+            (f"zero adicional: $s={-b7:.2f}$" if usa_zero7 else ""))
 
 with c7b:
     t_e7 = np.linspace(0, 14, 700)
-    _, y_ref7 = sc_step(lti([k_v7*wn_v7**2],[1,2*xi_v7*wn_v7,wn_v7**2]), T=t_e7)
-    _, y_a7   = sc_step(lti([k_v7*wn_v7**2], np.polymul([1,2*xi_v7*wn_v7,wn_v7**2],[1,a7])), T=t_e7)
-    _, y_b7   = sc_step(lti([k_v7*wn_v7**2,k_v7*wn_v7**2*b7],[1,2*xi_v7*wn_v7,wn_v7**2]), T=t_e7)
 
-    wd7 = wn_v7*np.sqrt(1-xi_v7**2); sigma7 = xi_v7*wn_v7
-    fig_e7 = make_subplots(rows=1, cols=2, subplot_titles=("Plano s","Resposta ao degrau"))
-    plotly_plano_s(fig_e7, 1, 1, xlim=(-12,5), ylim=(-5,5))
-    # polos dominantes
-    fig_e7.add_trace(go.Scatter(x=[-sigma7,-sigma7], y=[wd7,-wd7], mode="markers",
-        marker=dict(symbol="x",size=14,color="black",line=dict(width=2.5)),
+    # sempre: referência 2ª ordem puro
+    _, y_ref7 = sc_step(lti([k_v7*wn_v7**2],
+                             [1, 2*xi_v7*wn_v7, wn_v7**2]), T=t_e7)
+
+    # sistema ativo (combina polo e/ou zero conforme toggles)
+    den_base7 = [1, 2*xi_v7*wn_v7, wn_v7**2]
+    den_ativo7 = np.polymul(den_base7, [1, a7]) if usa_polo7 else den_base7
+    if usa_zero7:
+        num_ativo7 = [k_v7*wn_v7**2, k_v7*wn_v7**2*b7]
+    else:
+        num_ativo7 = [k_v7*wn_v7**2]
+    _, y_ativo7 = sc_step(lti(num_ativo7, den_ativo7), T=t_e7)
+
+    # cor da curva ativa: vermelho se só polo, azul se só zero,
+    # roxo se ambos, preto se nenhum
+    if usa_polo7 and usa_zero7:
+        cor_ativo7 = "#9467bd"; lbl_ativo7 = f"polo a={a7:.1f} + zero b={b7:.1f}"
+    elif usa_polo7:
+        cor_ativo7 = "#d62728"; lbl_ativo7 = f"polo adicional a={a7:.1f}"
+    elif usa_zero7:
+        cor_ativo7 = "#1f77b4"; lbl_ativo7 = f"zero adicional b={b7:.1f}"
+    else:
+        cor_ativo7 = "black";   lbl_ativo7 = "2ª ordem puro (igual à referência)"
+
+    wd7    = wn_v7 * np.sqrt(1 - xi_v7**2)
+    sigma7 = xi_v7 * wn_v7
+
+    fig_e7 = make_subplots(rows=1, cols=2,
+                           subplot_titles=("Plano s", "Resposta ao degrau"))
+    plotly_plano_s(fig_e7, 1, 1, xlim=(-12, 5), ylim=(-5, 5))
+
+    # polos dominantes — sempre visíveis
+    fig_e7.add_trace(go.Scatter(
+        x=[-sigma7, -sigma7], y=[wd7, -wd7], mode="markers",
+        marker=dict(symbol="x", size=14, color="black", line=dict(width=2.5)),
         name="polos dom.", showlegend=True), row=1, col=1)
-    # polo adicional
-    fig_e7.add_trace(go.Scatter(x=[-a7], y=[0], mode="markers",
-        marker=dict(symbol="x",size=13,color="#d62728",line=dict(width=2.5)),
-        name=f"polo a={a7:.1f}", showlegend=True), row=1, col=1)
-    # zero adicional
-    fig_e7.add_trace(go.Scatter(x=[-b7], y=[0], mode="markers",
-        marker=dict(symbol="circle-open",size=12,color="#1f77b4",line=dict(width=2.5)),
-        name=f"zero b={b7:.1f}", showlegend=True), row=1, col=1)
-    # curvas
-    fig_e7.add_trace(go.Scatter(x=t_e7, y=y_ref7, mode="lines",
-        line=dict(color="black",width=1.5,dash="dash"), name="2ª ordem puro"), row=1, col=2)
-    fig_e7.add_trace(go.Scatter(x=t_e7, y=y_a7, mode="lines",
-        line=dict(color="#d62728",width=2.2), name=f"polo a={a7:.1f}"), row=1, col=2)
-    fig_e7.add_trace(go.Scatter(x=t_e7, y=y_b7, mode="lines",
-        line=dict(color="#1f77b4",width=2.2), name=f"zero b={b7:.1f}"), row=1, col=2)
+
+    # polo adicional no plano s — só se ativo
+    if usa_polo7:
+        fig_e7.add_trace(go.Scatter(
+            x=[-a7], y=[0], mode="markers",
+            marker=dict(symbol="x", size=13, color="#d62728", line=dict(width=2.5)),
+            name=f"polo a={a7:.1f}", showlegend=True), row=1, col=1)
+
+    # zero adicional no plano s — só se ativo
+    if usa_zero7:
+        fig_e7.add_trace(go.Scatter(
+            x=[-b7], y=[0], mode="markers",
+            marker=dict(symbol="circle-open", size=12, color="#1f77b4",
+                        line=dict(width=2.5)),
+            name=f"zero b={b7:.1f}", showlegend=True), row=1, col=1)
+
+    # curvas de resposta
+    fig_e7.add_trace(go.Scatter(
+        x=t_e7, y=y_ref7, mode="lines",
+        line=dict(color="black", width=1.5, dash="dash"),
+        name="2ª ordem puro (referência)"), row=1, col=2)
+
+    fig_e7.add_trace(go.Scatter(
+        x=t_e7, y=y_ativo7, mode="lines",
+        line=dict(color=cor_ativo7, width=2.5),
+        name=lbl_ativo7), row=1, col=2)
+
     fig_e7.add_hline(y=1.0, line_dash="dash", line_color="gray", row=1, col=2)
     fig_e7.update_xaxes(title_text="t (s)", row=1, col=2)
     fig_e7.update_yaxes(title_text="y(t)", row=1, col=2)
-    fig_e7.update_layout(height=340, margin=dict(t=30,b=10,l=20,r=10),
-                         template="plotly_white", legend=dict(orientation="h", y=1.08))
+    fig_e7.update_layout(
+        height=340, margin=dict(t=30, b=10, l=20, r=10),
+        template="plotly_white", legend=dict(orientation="h", y=1.10))
     st.plotly_chart(fig_e7, use_container_width=True)
 
 st.divider()
