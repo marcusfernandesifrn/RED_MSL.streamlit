@@ -115,35 +115,46 @@ div[data-testid="stPageLink"].card-link a {
 def pagina_inicial():
     _home()
 
+import importlib
+
+def _run_modulo(nome):
+    """Importa (ou recarrega) o módulo e executa run()."""
+    import sys
+    if nome in sys.modules:
+        mod = importlib.reload(sys.modules[nome])
+    else:
+        mod = importlib.import_module(nome)
+    mod.run()
+
 def pagina_sinais():
-    import modulos.sinais_e_sistemas_lineares as m; m.run()
+    _run_modulo("modulos.sinais_e_sistemas_lineares")
 
 def pagina_laplace():
-    import modulos.transformada_de_laplace as m; m.run()
+    _run_modulo("modulos.transformada_de_laplace")
 
 def pagina_ord1():
-    import modulos.dinamica_sistemas_ordem_1 as m; m.run()
+    _run_modulo("modulos.dinamica_sistemas_ordem_1")
 
 def pagina_ord2():
-    import modulos.dinamica_sistemas_ordem_2 as m; m.run()
+    _run_modulo("modulos.dinamica_sistemas_ordem_2")
 
 def pagina_mf():
-    import modulos.realimentacao_malha_fechada as m; m.run()
+    _run_modulo("modulos.realimentacao_malha_fechada")
 
 def pagina_lgr():
-    import modulos.realimentacao_lgr as m; m.run()
+    _run_modulo("modulos.realimentacao_lgr")
 
 def pagina_estab():
-    import modulos.estabilidade_realimentacao as m; m.run()
+    _run_modulo("modulos.estabilidade_realimentacao")
 
 def pagina_bode():
-    import modulos.resposta_frequencia as m; m.run()
+    _run_modulo("modulos.resposta_frequencia")
 
 def pagina_nyquist():
-    import modulos.criterio_nyquist as m; m.run()
+    _run_modulo("modulos.criterio_nyquist")
 
 def pagina_ss():
-    import modulos.espaco_de_estados as m; m.run()
+    _run_modulo("modulos.espaco_de_estados")
 
 # ── Definição das páginas com url_path explícito ──────────────────────────────
 PG_HOME   = st.Page(pagina_inicial, title="Página Inicial",              icon="📘", default=True, url_path="home")
