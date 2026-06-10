@@ -116,34 +116,34 @@ def pagina_inicial():
     _home()
 
 def pagina_sinais():
-    import modulos.sinais_e_sistemas_lineares as m; m    # noqa
+    import modulos.sinais_e_sistemas_lineares as m; m.run()
 
 def pagina_laplace():
-    import modulos.transformada_de_laplace as m; m       # noqa
+    import modulos.transformada_de_laplace as m; m.run()
 
 def pagina_ord1():
-    import modulos.dinamica_sistemas_ordem_1 as m; m     # noqa
+    import modulos.dinamica_sistemas_ordem_1 as m; m.run()
 
 def pagina_ord2():
-    import modulos.dinamica_sistemas_ordem_2 as m; m     # noqa
+    import modulos.dinamica_sistemas_ordem_2 as m; m.run()
 
 def pagina_mf():
-    import modulos.realimentacao_malha_fechada as m; m   # noqa
+    import modulos.realimentacao_malha_fechada as m; m.run()
 
 def pagina_lgr():
-    import modulos.realimentacao_lgr as m; m             # noqa
+    import modulos.realimentacao_lgr as m; m.run()
 
 def pagina_estab():
-    import modulos.estabilidade_realimentacao as m; m    # noqa
+    import modulos.estabilidade_realimentacao as m; m.run()
 
 def pagina_bode():
-    import modulos.resposta_frequencia as m; m           # noqa
+    import modulos.resposta_frequencia as m; m.run()
 
 def pagina_nyquist():
-    import modulos.criterio_nyquist as m; m              # noqa
+    import modulos.criterio_nyquist as m; m.run()
 
 def pagina_ss():
-    import modulos.espaco_de_estados as m; m             # noqa
+    import modulos.espaco_de_estados as m; m.run()
 
 # ── Definição das páginas com url_path explícito ──────────────────────────────
 PG_HOME   = st.Page(pagina_inicial, title="Página Inicial",              icon="📘", default=True, url_path="home")
