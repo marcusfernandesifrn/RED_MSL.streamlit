@@ -10,7 +10,7 @@ Autor: Marcus V A Fernandes · marcus.fernandes@ifrn.edu.br · v1.0 · 2026
 
 ```
 red_msl/
-├── app.py               ← Entrypoint principal (roteador)
+├── streamlit_app.py               ← Entrypoint principal (roteador)
 ├── requirements.txt
 ├── README.md
 └── modulos/
@@ -46,7 +46,7 @@ red_msl/
 
 1. Faça o upload ou push deste repositório no GitHub
 2. No Streamlit Cloud, configure:
-   - **Main file path:** `app.py`
+   - O Streamlit Cloud detecta `streamlit_app.py` automaticamente — nenhuma configuração necessária.
 3. A pasta `modulos/` **não deve** ser renomeada para `pages/`
    (o nome `pages/` ativa o sistema legado de navegação do Streamlit)
 
@@ -54,5 +54,5 @@ red_msl/
 
 ```bash
 pip install -r requirements.txt
-streamlit run app.py
+streamlit run streamlit_app.py
 ```
