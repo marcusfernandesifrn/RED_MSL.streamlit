@@ -16,12 +16,6 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 # ── Configuração da Página ────────────────────────────────────────────────────
-st.set_page_config(
-    page_title="Estabilidade de Sistemas com Realimentação",
-    page_icon="⚖️",
-    layout="wide",
-)
-
 # ── Estilo global de figuras ──────────────────────────────────────────────────
 plt.rcParams.update({
     "figure.dpi": 120,

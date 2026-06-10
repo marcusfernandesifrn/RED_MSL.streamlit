@@ -14,12 +14,6 @@ from scipy.signal import lti, step as sc_step
 import plotly.graph_objects as go
 
 # ── Configuração da Página ────────────────────────────────────────────────────
-st.set_page_config(
-    page_title="Sinais e Sistemas Lineares",
-    page_icon="📡",
-    layout="wide",
-)
-
 # ── Estilo global de figuras ──────────────────────────────────────────────────
 plt.rcParams.update({
     "figure.dpi": 120,

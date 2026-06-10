@@ -18,12 +18,6 @@ from sympy import (symbols, oo, exp, cos, sin, sqrt, latex,
                    laplace_transform, Rational)
 
 # ── Configuração da Página ────────────────────────────────────────────────────
-st.set_page_config(
-    page_title="Transformada de Laplace",
-    page_icon="🌀",
-    layout="wide",
-)
-
 # ── Estilo global de figuras ──────────────────────────────────────────────────
 plt.rcParams.update({
     "figure.dpi": 120,

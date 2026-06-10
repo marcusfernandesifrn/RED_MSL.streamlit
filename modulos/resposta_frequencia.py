@@ -18,12 +18,6 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # ── Configuração da Página ────────────────────────────────────────────────────
-st.set_page_config(
-    page_title="Resposta em Frequência — Parte 1",
-    page_icon="📉",
-    layout="wide",
-)
-
 # ── Estilo global de figuras ──────────────────────────────────────────────────
 plt.rcParams.update({
     "figure.dpi": 120,

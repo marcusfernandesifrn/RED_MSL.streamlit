@@ -17,12 +17,6 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # ── Configuração da Página ────────────────────────────────────────────────────
-st.set_page_config(
-    page_title="Critério de Nyquist",
-    page_icon="🔁",
-    layout="wide",
-)
-
 # ── Estilo global de figuras ──────────────────────────────────────────────────
 plt.rcParams.update({
     "figure.dpi": 120,
